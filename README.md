@@ -276,17 +276,4 @@ Para cambios mayores, por favor abre un issue primero.
 📄 Licencia
 Este proyecto está bajo la licencia MIT.
 
-yaml
-Copiar código
 
----
-
-Si quieres, puedo:
-
-🔥 Generarte **badges de GitHub**  
-🔥 Agregar un **logo Pokémon**  
-🔥 Añadir **capturas de pantalla**  
-🔥 Incluir un **diagrama de arquitectura**  
-🔥 Hacer un README más técnico o más comercial
-
-Solo dímelo.
