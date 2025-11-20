@@ -1,0 +1,48 @@
+# Entorno virtual
+.venv/
+venv/
+ENV/
+
+# Archivos de configuración sensibles
+.env
+*.env
+
+# Archivos de Python compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de base de datos locales (si usás SQLite en dev)
+*.db
+*.sqlite3
+
+# Archivos de logs
+*.log
+logs/
+
+# Carpetas de caché
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Archivos generados por herramientas
+*.egg-info/
+dist/
+build/
+
+# IDEs / Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+tmp/
+temp/
+*.bak
