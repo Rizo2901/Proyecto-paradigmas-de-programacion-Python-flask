@@ -1,25 +1,19 @@
 from flask import Flask
-from dotenv import load_dotenv
-import os
+from flask_sqlalchemy import SQLAlchemy
+from config import config_dict
+from app.extensions import db
 
-from app.extensions import init_extensions
-from app.routes import register_routes
-
-load_dotenv()
-
-def create_app():
+def create_app(config_name="dev"):
     app = Flask(__name__)
 
-    env = os.getenv("FLASK_ENV", "development")
+    app.config.from_object(config_dict[config_name])
 
-    if env == "development":
-        from config.dev import DevConfig
-        app.config.from_object(DevConfig)
-    else:
-        from config.prod import ProdConfig
-        app.config.from_object(ProdConfig)
+    db.init_app(app)
 
-    init_extensions(app)
-    register_routes(app)
+    with app.app_context():
+        from app.routes import register_routes
+        register_routes(app)
+        # db.create_all()  # Solo si quieres crear tablas automáticamente
 
     return app
+
