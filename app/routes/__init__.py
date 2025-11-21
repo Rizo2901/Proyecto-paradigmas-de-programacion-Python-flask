@@ -1,5 +1,4 @@
-from flask import Blueprint
-
+from app.routes.home import home_bp
+ 
 def register_routes(app):
-    from .main import main_bp
-    app.register_blueprint(main_bp)
+    app.register_blueprint(home_bp)

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}Pokemon Carts{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+ 
+    <!-- Sidebar (menú lateral) -->
+<aside id="sidebar" class="sidebar">
+<h2>Menú</h2>
+<ul>
+<li><a href="/">Inicio</a></li>
+<li><a href="/usuarios">Usuarios</a></li>
+<li><a href="/cartas">Cartas</a></li>
+</ul>
+</aside>
+ 
+    <!-- Contenido principal -->
+<div class="main-container">
+ 
+        <!-- Header -->
+<header class="header">
+<div class="left">
+<button id="menuBtn" class="menu-btn">☰</button>
+<h1>Pokemon Carts</h1>
+</div>
+</header>
+ 
+        <!-- Contenido dinámico -->
+<main class="content">
+            {% block content %}{% endblock %}
+</main>
+ 
+        <!-- Footer -->
+<footer class="footer">
+<p>© 2025 Pokemon Carts — Todos los derechos reservados</p>
+</footer>
+ 
+    </div>
+ 
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+</body>
+</html>
