@@ -2,7 +2,7 @@ import decimal
 from typing import Optional
 from sqlalchemy import Integer, Unicode, DECIMAL, Boolean, text, Index, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from models.base import Base
+from app.models.base import Base
 
 class Productos(Base):
     __tablename__ = "Productos"

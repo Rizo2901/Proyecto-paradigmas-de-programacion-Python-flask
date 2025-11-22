@@ -2,7 +2,7 @@ import decimal
 from typing import Optional
 from sqlalchemy import Integer, DECIMAL, Computed, ForeignKeyConstraint, Index, PrimaryKeyConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from models.base import Base
+from app.models.base import Base
 
 class CarritoDetalle(Base):
     __tablename__ = "CarritoDetalle"

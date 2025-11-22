@@ -1,8 +1,8 @@
 import datetime
 import decimal
-from sqlalchemy import Integer, Unicode, DECIMAL, DATETIME2, ForeignKeyConstraint, Index, PrimaryKeyConstraint, text
+from sqlalchemy import Integer, Unicode, DECIMAL, DateTime, ForeignKeyConstraint, Index, PrimaryKeyConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from models.base import Base
+from app.models.base import Base
 
 class Pedidos(Base):
     __tablename__ = "Pedidos"
@@ -16,7 +16,7 @@ class Pedidos(Base):
 
     IdPedido: Mapped[int] = mapped_column(Integer, primary_key=True)
     IdCliente: Mapped[int] = mapped_column(Integer, nullable=False)
-    FechaPedido: Mapped[datetime.datetime] = mapped_column(DATETIME2, nullable=False, server_default=text("(SYSUTCDATETIME())"))
+    FechaPedido: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False, server_default=text("(SYSUTCDATETIME())"))
     Total: Mapped[decimal.Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, server_default=text("((0))"))
     Estado: Mapped[str] = mapped_column(Unicode(20), nullable=False, server_default=text("(N'Pendiente')"))
 

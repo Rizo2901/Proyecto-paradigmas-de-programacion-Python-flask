@@ -1,17 +1,23 @@
-from extensions import db
-from models.productos import Productos
-from sqlalchemy import text
+from app.extensions import db
+from app.models.productos import Productos
 
 class ProductosService:
 
     @staticmethod
     def obtener_todos():
-        sp = text("EXEC sc_ventas.SP_ObtenerProductos")
-        result = db.session.execute(sp).mappings().all()
-        return [dict(row) for row in result]
+        """Obtener todos los productos"""
+        productos = db.session.query(Productos).all()
+        return [ProductosService.to_dict(p) for p in productos]
+
+    @staticmethod
+    def obtener_activos():
+        """Obtener solo productos activos"""
+        productos = db.session.query(Productos).filter(Productos.Activo == True).all()
+        return [ProductosService.to_dict(p) for p in productos]
 
     @staticmethod
     def obtener_por_id(id_producto):
+        """Obtener un producto por su ID"""
         producto = db.session.query(Productos).get(id_producto)
         if not producto:
             return {"error": "Producto no encontrado"}
@@ -19,50 +25,106 @@ class ProductosService:
 
     @staticmethod
     def crear(data):
-        sp = text("""
-            EXEC sc_ventas.SP_InsertarProducto 
-                :Nombre, :Descripcion, :Precio, :Stock
-        """)
-
-        db.session.execute(sp, {
-            "Nombre": data["Nombre"],
-            "Descripcion": data.get("Descripcion"),
-            "Precio": data["Precio"],
-            "Stock": data["Stock"]
-        })
-        db.session.commit()
-
-        return {"message": "Producto creado correctamente"}
+        """Crear un nuevo producto"""
+        try:
+            producto = Productos(
+                Nombre=data.get("Nombre"),
+                Descripcion=data.get("Descripcion"),
+                Precio=data.get("Precio", 0),
+                Stock=data.get("Stock", 0),
+                Activo=data.get("Activo", True)
+            )
+            db.session.add(producto)
+            db.session.commit()
+            return ProductosService.to_dict(producto)
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Error al crear producto: {str(e)}"}
 
     @staticmethod
     def actualizar(id_producto, data):
-        producto = db.session.query(Productos).get(id_producto)
-        if not producto:
-            return {"error": "Producto no encontrado"}
+        """Actualizar un producto existente"""
+        try:
+            producto = db.session.query(Productos).get(id_producto)
+            if not producto:
+                return {"error": "Producto no encontrado"}
 
-        producto.Nombre = data.get("Nombre", producto.Nombre)
-        producto.Descripcion = data.get("Descripcion", producto.Descripcion)
-        producto.Precio = data.get("Precio", producto.Precio)
-        producto.Stock = data.get("Stock", producto.Stock)
-        producto.Activo = data.get("Activo", producto.Activo)
+            if "Nombre" in data:
+                producto.Nombre = data["Nombre"]
+            if "Descripcion" in data:
+                producto.Descripcion = data.get("Descripcion")
+            if "Precio" in data:
+                producto.Precio = data["Precio"]
+            if "Stock" in data:
+                producto.Stock = data["Stock"]
+            if "Activo" in data:
+                producto.Activo = data["Activo"]
 
-        db.session.commit()
-
-        return ProductosService.to_dict(producto)
+            db.session.commit()
+            return ProductosService.to_dict(producto)
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Error al actualizar producto: {str(e)}"}
 
     @staticmethod
     def eliminar(id_producto):
-        producto = db.session.query(Productos).get(id_producto)
-        if not producto:
-            return {"error": "Producto no encontrado"}
+        """Eliminar un producto (soft delete - desactivar)"""
+        try:
+            producto = db.session.query(Productos).get(id_producto)
+            if not producto:
+                return {"error": "Producto no encontrado"}
 
-        db.session.delete(producto)
-        db.session.commit()
+            producto.Activo = False
+            db.session.commit()
+            return {"message": "Producto desactivado correctamente"}
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Error al desactivar producto: {str(e)}"}
 
-        return {"message": "Producto eliminado correctamente"}
+    @staticmethod
+    def eliminar_fisico(id_producto):
+        """Eliminar físicamente un producto de la BD"""
+        try:
+            producto = db.session.query(Productos).get(id_producto)
+            if not producto:
+                return {"error": "Producto no encontrado"}
+
+            db.session.delete(producto)
+            db.session.commit()
+            return {"message": "Producto eliminado correctamente"}
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Error al eliminar producto: {str(e)}"}
+
+    @staticmethod
+    def buscar_por_nombre(nombre):
+        """Buscar productos por nombre (búsqueda parcial)"""
+        productos = db.session.query(Productos).filter(
+            Productos.Nombre.like(f"%{nombre}%")
+        ).all()
+        return [ProductosService.to_dict(p) for p in productos]
+
+    @staticmethod
+    def actualizar_stock(id_producto, cantidad):
+        """Actualizar el stock de un producto"""
+        try:
+            producto = db.session.query(Productos).get(id_producto)
+            if not producto:
+                return {"error": "Producto no encontrado"}
+
+            producto.Stock += cantidad
+            if producto.Stock < 0:
+                return {"error": "Stock insuficiente"}
+
+            db.session.commit()
+            return ProductosService.to_dict(producto)
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Error al actualizar stock: {str(e)}"}
 
     @staticmethod
     def to_dict(p):
+        """Convertir modelo a diccionario"""
         return {
             "IdProducto": p.IdProducto,
             "Nombre": p.Nombre,

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Clientes - Pokemon Carts{% endblock %}
+
+{% block content %}
+<div class="clientes-container">
+    <div class="clientes-header">
+        <h2>Gestión de Clientes</h2>
+        <button class="btn-primary" onclick="abrirModalCrear()">
+            <span>+</span> Nuevo Cliente
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="clientes-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Fecha Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="clientes-tbody">
+                <tr>
+                    <td colspan="7" class="loading">Cargando clientes...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Cliente -->
+<div id="modalCliente" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Nuevo Cliente</h3>
+            <span class="close" onclick="cerrarModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formCliente">
+                <input type="hidden" id="clienteId" name="IdCliente">
+                
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="Nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="correo">Correo Electrónico *</label>
+                    <input type="email" id="correo" name="Correo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="telefono">Teléfono</label>
+                    <input type="text" id="telefono" name="Telefono">
+                </div>
+
+                <div class="form-group">
+                    <label for="direccion">Dirección</label>
+                    <textarea id="direccion" name="Direccion" rows="3"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Eliminar -->
+<div id="modalEliminar" class="modal">
+    <div class="modal-content modal-small">
+        <div class="modal-header">
+            <h3>Confirmar Eliminación</h3>
+            <span class="close" onclick="cerrarModalEliminar()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>¿Estás seguro de que deseas eliminar al cliente <strong id="nombreClienteEliminar"></strong>?</p>
+            <p class="warning-text">Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="cerrarModalEliminar()">Cancelar</button>
+            <button type="button" class="btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/clientes.js') }}"></script>
+{% endblock %}
