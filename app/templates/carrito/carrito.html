@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Carrito de Compras - Pokemon Carts{% endblock %}
+
+{% block content %}
+
+<div class="clientes-container">
+    <div class="clientes-header">
+        <h2>Carrito de Compras</h2>
+
+        {% if detalles|length > 0 %}
+        <button class="btn-primary" onclick="finalizarCompra()">
+            Finalizar Compra 🛒
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="table-container">
+        <table class="clientes-table">
+            <thead>
+                <tr>
+                    <th>ID Producto</th>
+                    <th>Nombre</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unitario</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% if detalles|length == 0 %}
+                    <tr>
+                        <td colspan="6" class="loading">Tu carrito está vacío</td>
+                    </tr>
+                {% else %}
+                    {% for item in detalles %}
+                        <tr>
+                            <td>{{ item.IdProducto }}</td>
+                            <td>{{ item.NombreProducto }}</td>
+                            <td>{{ item.Cantidad }}</td>
+                            <td>₡{{ item.PrecioUnitario }}</td>
+                            <td>₡{{ item.Subtotal }}</td>
+                            <td>
+                                <form action="/carrito/{{ item.IdCarrito }}/eliminar/{{ item.IdProducto }}" method="POST">
+                                    <button class="btn-danger">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total %}
+    <div class="cart-total-box">
+        <h3>Total a pagar: <span class="total-money">₡{{ total }}</span></h3>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function finalizarCompra() {
+    alert("Compra finalizada . Luego aquí conectamos con facturación.");
+}
+</script>
+
+{% endblock %}

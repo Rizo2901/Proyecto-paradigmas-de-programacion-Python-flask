@@ -21,13 +21,21 @@
 <div class="main-container">
  
         <!-- Header -->
-<header class="header">
-<div class="left">
-<button id="menuBtn" class="menu-btn">☰</button>
-<h1>Pokemon Carts</h1>
-</div>
-</header>
- 
+        <header class="header">
+            <div class="left">
+                <button id="menuBtn" class="menu-btn">☰</button>
+                <h1>Pokemon Carts</h1>
+            </div>
+        
+            <div class="right">
+                <a href="/carrito/pagina" class="cart-btn">
+                    🛒 <span id="cart-count">{{ carrito_count or 0 }}</span>
+                </a>
+            </div>
+        </header>
+         
+        
+        
         <!-- Contenido dinámico -->
 <main class="content">
             {% block content %}{% endblock %}

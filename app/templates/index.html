@@ -1,9 +1,7 @@
- 
- 
 {% extends "base.html" %}
- 
+
 {% block title %}Inicio - Pokemon Carts{% endblock %}
- 
+
 {% block content %}
 <div class="products-header">
     <h2>Cartas Pokémon Disponibles</h2>
@@ -19,8 +17,10 @@
                 <span class="pokemon-icon">⚡</span>
             </div>
         </div>
+
         <div class="card-content">
             <h3 class="product-name">{{ producto.Nombre or 'Sin nombre' }}</h3>
+
             {% if producto.Descripcion %}
             <p class="product-description">
                 {% if producto.Descripcion|length > 100 %}
@@ -32,20 +32,28 @@
             {% else %}
             <p class="product-description">Sin descripción disponible</p>
             {% endif %}
+
             <div class="product-info">
                 <div class="stock-info">
                     <span class="stock-label">Stock:</span>
-                    <span class="stock-value {% if producto.Stock > 10 %}in-stock{% elif producto.Stock > 0 %}low-stock{% else %}out-of-stock{% endif %}">
+                    <span class="stock-value 
+                        {% if producto.Stock > 10 %}in-stock
+                        {% elif producto.Stock > 0 %}low-stock
+                        {% else %}out-of-stock
+                        {% endif %}">
                         {{ producto.Stock or 0 }}
                     </span>
                 </div>
+
                 <div class="price-info">
                     <span class="price-label">Precio:</span>
                     <span class="price-value">${{ "%.2f"|format(producto.Precio|default(0)) }}</span>
                 </div>
             </div>
+
             <div class="card-actions">
-                <button class="btn-add-cart" onclick="agregarAlCarrito({{ producto.IdProducto }})" 
+                <button class="btn-add-cart"
+                        data-product-id="{{ producto.IdProducto }}"
                         {% if not producto.Stock or producto.Stock == 0 %}disabled{% endif %}>
                     {% if not producto.Stock or producto.Stock == 0 %}
                         Sin Stock
@@ -58,9 +66,11 @@
     </div>
     {% endfor %}
 </div>
+
 {% else %}
 <div class="no-products">
     <p>No hay productos disponibles en este momento.</p>
+
     {% if not productos %}
     <p style="color: #f56565; margin-top: 10px;">
         ⚠️ Error al conectar con la base de datos. Verifica las credenciales.
@@ -70,10 +80,49 @@
 {% endif %}
 
 <script>
-function agregarAlCarrito(idProducto) {
-    // TODO: Implementar lógica para agregar al carrito
-    // Por ahora solo muestra un mensaje
-    alert('Producto ' + idProducto + ' agregado al carrito');
+// Activar los botones Agregar al Carrito automáticamente
+document.addEventListener('DOMContentLoaded', function () {
+    const buttons = document.querySelectorAll('.btn-add-cart');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', function () {
+            const productId = this.getAttribute('data-product-id');
+
+            if (productId && !this.disabled) {
+                agregarAlCarrito(parseInt(productId));
+            }
+        });
+    });
+});
+
+// Función para agregar al carrito
+async function agregarAlCarrito(idProducto) {
+    try {
+        const respuesta = await fetch(`/carrito/1/agregar/${idProducto}`, {
+            method: "POST"
+        });
+
+        const data = await respuesta.json();
+
+        if (respuesta.ok) {
+            alert(`Producto ${idProducto} agregado al carrito`);
+
+            // Actualizar contador del carrito en el header
+            const badge = document.getElementById("cart-count");
+            if (badge) {
+                let actual = parseInt(badge.textContent) || 0;
+                badge.textContent = actual + 1;
+            }
+
+        } else {
+            alert("Error: " + data.error);
+        }
+
+    } catch (error) {
+        alert("Error en la comunicación con el servidor");
+        console.error(error);
+    }
 }
 </script>
+
 {% endblock %}
