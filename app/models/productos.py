@@ -20,3 +20,4 @@ class Productos(Base):
     Activo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("((1))"))
 
     CarritoDetalle: Mapped[list["CarritoDetalle"]] = relationship("CarritoDetalle", back_populates="Productos_")
+    PedidosDetalle: Mapped[list["PedidosDetalle"]] = relationship("PedidosDetalle", back_populates="Productos_")

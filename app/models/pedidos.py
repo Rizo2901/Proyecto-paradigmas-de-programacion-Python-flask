@@ -21,3 +21,4 @@ class Pedidos(Base):
     Estado: Mapped[str] = mapped_column(Unicode(20), nullable=False, server_default=text("(N'Pendiente')"))
 
     Clientes_: Mapped["Clientes"] = relationship("Clientes", back_populates="Pedidos")
+    PedidosDetalle: Mapped[list["PedidosDetalle"]] = relationship("PedidosDetalle", back_populates="Pedidos_", cascade="all, delete-orphan")

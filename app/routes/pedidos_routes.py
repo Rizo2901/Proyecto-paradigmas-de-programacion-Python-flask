@@ -1,7 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from app.services.pedidos_service import PedidosService
 
 pedidos_bp = Blueprint("pedidos", __name__)
+
+@pedidos_bp.get("/pedidos/pagina")
+def pagina_pedidos():
+    """Página HTML para gestionar pedidos"""
+    return render_template("pedidos/pedidos.html")
 
 @pedidos_bp.get("/pedidos")
 def obtener_todos_pedidos():
@@ -73,6 +78,47 @@ def cambiar_estado_pedido(id_pedido):
 def eliminar_pedido(id_pedido):
     """Eliminar un pedido"""
     resultado = PedidosService.eliminar(id_pedido)
+    if "error" in resultado:
+        return jsonify(resultado), 404
+    return jsonify(resultado), 200
+
+# Endpoints para gestionar detalles de pedidos
+@pedidos_bp.get("/pedidos/<int:id_pedido>/detalles")
+def obtener_detalles_pedido(id_pedido):
+    """Obtener todos los detalles de un pedido"""
+    resultado = PedidosService.obtener_detalles(id_pedido)
+    if "error" in resultado:
+        return jsonify(resultado), 404
+    return jsonify(resultado)
+
+@pedidos_bp.post("/pedidos/<int:id_pedido>/detalles")
+def agregar_detalle_pedido(id_pedido):
+    """Agregar un detalle a un pedido"""
+    data = request.json
+    if not data:
+        return jsonify({"error": "Datos no proporcionados"}), 400
+    
+    resultado = PedidosService.agregar_detalle(id_pedido, data)
+    if "error" in resultado:
+        return jsonify(resultado), 400
+    return jsonify(resultado), 201
+
+@pedidos_bp.put("/pedidos/<int:id_pedido>/detalles/<int:id_detalle>")
+def actualizar_detalle_pedido(id_pedido, id_detalle):
+    """Actualizar un detalle de pedido"""
+    data = request.json
+    if not data:
+        return jsonify({"error": "Datos no proporcionados"}), 400
+    
+    resultado = PedidosService.actualizar_detalle(id_pedido, id_detalle, data)
+    if "error" in resultado:
+        return jsonify(resultado), 400
+    return jsonify(resultado)
+
+@pedidos_bp.delete("/pedidos/<int:id_pedido>/detalles/<int:id_detalle>")
+def eliminar_detalle_pedido(id_pedido, id_detalle):
+    """Eliminar un detalle de pedido"""
+    resultado = PedidosService.eliminar_detalle(id_pedido, id_detalle)
     if "error" in resultado:
         return jsonify(resultado), 404
     return jsonify(resultado), 200

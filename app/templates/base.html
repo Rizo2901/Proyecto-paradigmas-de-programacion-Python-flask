@@ -7,12 +7,16 @@
 </head>
 <body>
  
+    <!-- Overlay oscuro para el fondo -->
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
     <!-- Sidebar (menú lateral) -->
 <aside id="sidebar" class="sidebar">
 <h2>Menú</h2>
 <ul>
 <li><a href="/">Inicio</a></li>
 <li><a href="/clientes/pagina">Clientes</a></li>
+<li><a href="/pedidos/pagina">Pedidos</a></li>
 <li><a href="/">Cartas</a></li>
 </ul>
 </aside>
@@ -25,6 +29,14 @@
 <div class="left">
 <button id="menuBtn" class="menu-btn">☰</button>
 <h1>Pokemon Carts</h1>
+</div>
+<div class="right">
+<div class="cart-icon-container">
+<button id="cartIcon" class="cart-icon" onclick="verCarrito()" title="Ver carrito">
+🛒
+<span id="cartBadge" class="cart-badge">0</span>
+</button>
+</div>
 </div>
 </header>
  
@@ -41,5 +53,6 @@
     </div>
  
     <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/carrito.js') }}"></script>
 </body>
 </html>
