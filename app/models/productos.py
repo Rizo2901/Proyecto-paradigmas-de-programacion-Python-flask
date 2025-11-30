@@ -19,5 +19,17 @@ class Productos(Base):
     Stock: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("((0))"))
     Activo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("((1))"))
 
-    CarritoDetalle: Mapped[list["CarritoDetalle"]] = relationship("CarritoDetalle", back_populates="Productos_")
-    PedidosDetalle: Mapped[list["PedidosDetalle"]] = relationship("PedidosDetalle", back_populates="Productos_")
+    # Relaciones uno-a-muchos con cascada y passive_deletes
+    CarritoDetalle: Mapped[list["CarritoDetalle"]] = relationship(
+        "CarritoDetalle",
+        back_populates="Productos_",
+        passive_deletes=True,
+        cascade="all, delete-orphan"
+    )
+
+    PedidosDetalle: Mapped[list["PedidosDetalle"]] = relationship(
+        "PedidosDetalle",
+        back_populates="Productos_",
+        passive_deletes=True,
+        cascade="all, delete-orphan"
+    )

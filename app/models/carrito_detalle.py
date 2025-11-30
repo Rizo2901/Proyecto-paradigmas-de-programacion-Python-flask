@@ -13,7 +13,7 @@ class CarritoDetalle(Base):
         ),
         ForeignKeyConstraint(
             ["IdProducto"], ["sc_ventas.Productos.IdProducto"],
-            onupdate="CASCADE", name="FK_CarritoDetalle_Productos"
+            ondelete="CASCADE", name="FK_CarritoDetalle_Productos"
         ),
         PrimaryKeyConstraint("IdDetalle", name="PK_CarritoDetalle"),
         Index("IX_CarritoDetalle_IdCarrito", "IdCarrito"),
@@ -21,11 +21,11 @@ class CarritoDetalle(Base):
         Index("UQ_CarritoDetalle_Uniq", "IdCarrito", "IdProducto", unique=True),
         {
             "schema": "sc_ventas",
-            "implicit_returning": False  # 👈 evita INSERT...OUTPUT
-        },
+            "implicit_returning": False
+        }
     )
 
-    IdDetalle: Mapped[int] = mapped_column(Integer, primary_key=True)
+    IdDetalle: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     IdCarrito: Mapped[int] = mapped_column(Integer, nullable=False)
     IdProducto: Mapped[int] = mapped_column(Integer, nullable=False)
     Cantidad: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("((1))"))
@@ -35,5 +35,6 @@ class CarritoDetalle(Base):
         Computed("([Cantidad]*[PrecioUnitario])", persisted=True)
     )
 
+    # Relaciones many-to-one (sin delete-orphan aquí)
     Carrito_: Mapped["Carrito"] = relationship("Carrito", back_populates="CarritoDetalle")
     Productos_: Mapped["Productos"] = relationship("Productos", back_populates="CarritoDetalle")

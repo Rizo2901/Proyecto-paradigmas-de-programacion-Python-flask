@@ -12,6 +12,23 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarProductos();
 });
 
+(() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+  
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        // Activa estilos de error
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+  
+
 // Función para cargar pedidos
 async function cargarPedidos() {
     try {
@@ -139,12 +156,7 @@ async function editarPedido(idPedido) {
 }
 
 // Función para cerrar modal
-function cerrarModal() {
-    document.getElementById("modalPedido").style.display = "none";
-    pedidoEditandoId = null;
-    detallesPedido = [];
-    document.getElementById("idCliente").disabled = false;
-}
+
 
 // Función para agregar detalle
 function agregarDetalle() {

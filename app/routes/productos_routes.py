@@ -1,8 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from app.services.productos_service import ProductosService
 
 productos_bp = Blueprint("productos", __name__)
-
+@productos_bp.get("/cartas/pagina")
+def pagina_clientes():
+    """Página HTML para gestionar cartas"""
+    return render_template("cartas/cartas.html")
 @productos_bp.get("/productos")
 def obtener_productos():
     return jsonify(ProductosService.obtener_todos())
@@ -23,4 +26,8 @@ def actualizar_producto(id_producto):
 
 @productos_bp.delete("/productos/<int:id_producto>")
 def eliminar_producto(id_producto):
-    return jsonify(ProductosService.eliminar(id_producto))
+    """Eliminar un producto"""
+    resultado = ProductosService.eliminar_fisico(id_producto)
+    if "error" in resultado:
+        return jsonify(resultado), 404
+    return jsonify(resultado), 200

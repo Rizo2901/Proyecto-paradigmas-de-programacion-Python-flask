@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Cartas - Pokemon Carts{% endblock %}
+
+{% block content %}
+<div class="clientes-container">
+  <div class="clientes-header d-flex justify-content-between align-items-center mb-3">
+    <h2>Gestión de Cartas</h2>
+
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCarta" onclick="nuevaCarta()">
+      <span>+</span> Nueva Carta
+    </button>
+  </div>
+
+  <div class="table-container">
+    <table class="clientes-table">
+      <thead class="table-dark">
+        <tr>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th>Activo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+
+      <!-- EL TBODY CORRECTO -->
+      <tbody id="cartas-tbody">
+        <tr>
+          <td colspan="6" class="text-center">Cargando cartas...</td>
+        </tr>
+      </tbody>
+
+    </table>
+  </div>
+</div>
+
+<!-- Modal Crear/Editar Carta -->
+<div class="modal fade" id="modalCarta" tabindex="-1" aria-labelledby="modalTitulo" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitulo">Nueva Carta</h3>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="formCarta" class="needs-validation" novalidate>
+
+          <input type="hidden" id="IdProducto">
+
+          <div class="mb-3">
+            <label class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="nombre" required minlength="3">
+            <div class="invalid-feedback">Ingrese un nombre válido.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Descripción *</label>
+            <textarea class="form-control" id="descripcion" rows="3" required></textarea>
+            <div class="invalid-feedback">Ingrese una descripción.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Precio *</label>
+            <input type="number" class="form-control" id="precio" min="0" step="0.01" required>
+            <div class="invalid-feedback">Ingrese un precio válido.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Stock *</label>
+            <input type="number" class="form-control" id="stock" min="0" required>
+            <div class="invalid-feedback">Ingrese una cantidad válida.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Activo *</label>
+            <select class="form-control" id="activo" required>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+            <div class="invalid-feedback">Seleccione un estado.</div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirmación Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h3 class="modal-title">Confirmar Eliminación</h3>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <p>¿Eliminar la carta <strong id="nombreCartaEliminar"></strong>?</p>
+        <p class="text-danger">Esta acción no se puede deshacer.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/cartas.js') }}"></script>
+{% endblock %}

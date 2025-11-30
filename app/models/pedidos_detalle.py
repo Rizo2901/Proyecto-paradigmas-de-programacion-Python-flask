@@ -7,8 +7,14 @@ from app.models.base import Base
 class PedidosDetalle(Base):
     __tablename__ = "PedidosDetalle"
     __table_args__ = (
-        ForeignKeyConstraint(["IdPedido"], ["sc_ventas.Pedidos.IdPedido"], ondelete="CASCADE", name="FK_PedidosDetalle_Pedidos"),
-        ForeignKeyConstraint(["IdProducto"], ["sc_ventas.Productos.IdProducto"], onupdate="CASCADE", name="FK_PedidosDetalle_Productos"),
+        ForeignKeyConstraint(
+            ["IdPedido"], ["sc_ventas.Pedidos.IdPedido"],
+            ondelete="CASCADE", name="FK_PedidosDetalle_Pedidos"
+        ),
+        ForeignKeyConstraint(
+            ["IdProducto"], ["sc_ventas.Productos.IdProducto"],
+            ondelete="CASCADE", name="FK_PedidosDetalle_Productos"
+        ),
         PrimaryKeyConstraint("IdDetalle", name="PK_PedidosDetalle"),
         Index("IX_PedidosDetalle_IdPedido", "IdPedido"),
         Index("IX_PedidosDetalle_IdProducto", "IdProducto"),
@@ -21,8 +27,10 @@ class PedidosDetalle(Base):
     IdProducto: Mapped[int] = mapped_column(Integer, nullable=False)
     Cantidad: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("((1))"))
     PrecioUnitario: Mapped[Optional[decimal.Decimal]] = mapped_column(DECIMAL(12, 2))
-    Subtotal: Mapped[Optional[decimal.Decimal]] = mapped_column(DECIMAL(23, 2), Computed("([Cantidad]*[PrecioUnitario])", persisted=True))
+    Subtotal: Mapped[Optional[decimal.Decimal]] = mapped_column(
+        DECIMAL(23, 2), Computed("([Cantidad]*[PrecioUnitario])", persisted=True)
+    )
 
+    # Relaciones many-to-one (sin delete-orphan aquí)
     Pedidos_: Mapped["Pedidos"] = relationship("Pedidos", back_populates="PedidosDetalle")
     Productos_: Mapped["Productos"] = relationship("Productos", back_populates="PedidosDetalle")
-

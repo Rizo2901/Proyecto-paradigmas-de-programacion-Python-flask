@@ -479,9 +479,6 @@ body {
     color: #a0a0b0;
 }
 
-.error {
-    color: #f56565;
-}
 
 /* Modal Styles */
 .modal {
@@ -706,7 +703,12 @@ body {
     font-weight: bold;
     display: inline-block;
 }
-
+.error {
+    color: #e63946; /* rojo */
+    font-size: 0.85rem;
+    margin-top: 4px;
+    display: block;
+  }
 .estado-pendiente {
     background: #ffd93d;
     color: #0f1123;
