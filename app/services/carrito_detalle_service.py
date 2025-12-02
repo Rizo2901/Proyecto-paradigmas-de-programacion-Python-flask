@@ -5,6 +5,7 @@ from app.models.carrito import Carrito
 from app.models.productos import Productos
 
 
+
 class CarritoDetalleService:
 
     @staticmethod
@@ -27,9 +28,18 @@ class CarritoDetalleService:
         items = db.session.query(CarritoDetalle).filter_by(IdCarrito=id_carrito).all()
         return [CarritoDetalleService.to_dict(i) for i in items]
 
+ 
+
+
+
     @staticmethod
     def agregar(id_carrito, data):
-        """Agregar o actualizar un producto en el carrito (por IdCarrito)"""
+        """
+        Agregar o actualizar un producto en el carrito.
+        Siempre se usa el último carrito creado para el cliente,
+        aunque esté vacío, hasta que se finalice la compra.
+        """
+        # 1. Buscar producto
         try:
             producto = db.session.get(Productos, data["IdProducto"])
         except Exception as e:
@@ -40,6 +50,30 @@ class CarritoDetalleService:
         if not producto or not producto.Activo:
             return {"error": "Producto no disponible"}
 
+        # 2. Buscar el último carrito del cliente
+        carrito = (
+            db.session.query(Carrito)
+            .filter_by(IdCliente=1)  # ⚠️ Ajusta al cliente actual
+            .order_by(Carrito.IdCarrito.desc())
+            .first()
+        )
+
+        if not carrito:
+            # Si no existe ninguno, crear uno nuevo
+            try:
+                carrito = Carrito(IdCliente=1)  # ⚠️ Ajusta campos según tu modelo
+                db.session.add(carrito)
+                db.session.commit()
+                print(f"[CarritoDetalleService] Carrito creado: IdCarrito={carrito.IdCarrito}")
+            except Exception as e:
+                db.session.rollback()
+                tb = traceback.format_exc()
+                print(f"[CarritoDetalleService] Error al crear carrito: {str(e)}\n{tb}")
+                return {"error": f"Error al crear carrito: {str(e)}", "trace": tb}
+
+        id_carrito = carrito.IdCarrito
+
+        # 3. Buscar detalle existente
         detalle_existente = db.session.query(CarritoDetalle).filter_by(
             IdCarrito=id_carrito,
             IdProducto=data["IdProducto"]
@@ -50,48 +84,47 @@ class CarritoDetalleService:
         except Exception:
             cantidad = 1
 
-        # Si ya existe el detalle, sumamos la cantidad.
+        # 4. Actualizar o insertar
         if detalle_existente:
             detalle_existente.Cantidad += cantidad
             try:
-                print(f"[CarritoDetalleService] actualizando detalle existente: IdCarrito={id_carrito}, IdProducto={data.get('IdProducto')}, Cantidad={cantidad}")
                 db.session.commit()
-                detalle_guardado = db.session.query(CarritoDetalle).filter_by(
-                    IdCarrito=id_carrito,
-                    IdProducto=data["IdProducto"]
-                ).first()
-                if detalle_guardado:
-                    print(f"[CarritoDetalleService] detalle actualizado: IdDetalle={detalle_guardado.IdDetalle} IdCarrito={detalle_guardado.IdCarrito} IdProducto={detalle_guardado.IdProducto} Cantidad={detalle_guardado.Cantidad}")
                 return {"message": "Producto actualizado", "IdCarrito": id_carrito}
             except Exception as e:
                 db.session.rollback()
                 tb = traceback.format_exc()
                 print(f"[CarritoDetalleService] Error al actualizar detalle: {str(e)}\n{tb}")
                 return {"error": f"Error al actualizar detalle: {str(e)}", "trace": tb}
-
-        # No existe el detalle, crear nuevo
-        detalle = CarritoDetalle(
-            IdCarrito=id_carrito,
-            IdProducto=data["IdProducto"],
-            Cantidad=cantidad,
-            PrecioUnitario=producto.Precio
-        )
-        db.session.add(detalle)
-        try:
-            print(f"[CarritoDetalleService] guardando detalle: IdCarrito={id_carrito}, IdProducto={data.get('IdProducto')}, Cantidad={cantidad}")
-            db.session.commit()
-            detalle_guardado = db.session.query(CarritoDetalle).filter_by(
+        else:
+            detalle = CarritoDetalle(
                 IdCarrito=id_carrito,
-                IdProducto=data["IdProducto"]
-            ).first()
-            if detalle_guardado:
-                print(f"[CarritoDetalleService] detalle guardado: IdDetalle={detalle_guardado.IdDetalle} IdCarrito={detalle_guardado.IdCarrito} IdProducto={detalle_guardado.IdProducto} Cantidad={detalle_guardado.Cantidad}")
-            return {"message": "Producto agregado", "IdCarrito": id_carrito}
+                IdProducto=data["IdProducto"],
+                Cantidad=cantidad,
+                PrecioUnitario=producto.Precio
+            )
+            db.session.add(detalle)
+            try:
+                db.session.commit()
+                return {"message": "Producto agregado", "IdCarrito": id_carrito}
+            except Exception as e:
+                db.session.rollback()
+                tb = traceback.format_exc()
+                print(f"[CarritoDetalleService] Error al guardar detalle: {str(e)}\n{tb}")
+                return {"error": f"Error al guardar detalle: {str(e)}", "trace": tb}
+        
+    @staticmethod
+    def obtener_productos_disponibles():
+        """
+        Retorna todos los productos activos/disponibles.
+        """
+        try:
+            productos = db.session.query(Productos).filter_by(Activo=True).all()
+            return productos
         except Exception as e:
-            db.session.rollback()
             tb = traceback.format_exc()
-            print(f"[CarritoDetalleService] Error al guardar detalle: {str(e)}\n{tb}")
-            return {"error": f"Error al guardar detalle: {str(e)}", "trace": tb}
+            print(f"[CarritoDetalleService] Error al obtener productos: {str(e)}\n{tb}")
+            return []
+
 
     @staticmethod
     def actualizar(id_cliente, id_producto, data):

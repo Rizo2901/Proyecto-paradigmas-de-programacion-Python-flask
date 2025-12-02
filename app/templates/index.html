@@ -7,6 +7,9 @@
     <h2>Cartas Pokémon Disponibles</h2>
     <p class="subtitle">Explora nuestra colección de cartas</p>
 </div>
+<!-- Hidden con el idCarrito -->
+<input type="hidden" id="idCarrito" value="{{ idCarrito or 0 }}">
+
 
 {% if productos and productos|length > 0 %}
 <div class="products-grid">
@@ -78,7 +81,7 @@
     {% endif %}
 </div>
 {% endif %}
-
+<script src="{{ url_for('static', filename='js/carrito_detalle.js') }}"></script>
 
 {% endblock %}
 
