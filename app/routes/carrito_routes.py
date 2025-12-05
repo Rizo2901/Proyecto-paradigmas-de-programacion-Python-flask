@@ -12,21 +12,24 @@ def obtener_todos_carritos():
 @carrito_bp.get("/carrito/pagina")
 def carrito_pagina():
     """Página visual del carrito (HTML)"""
-    id_cliente = 1  # temporal hasta login
 
-    carrito = CarritoService.obtener_con_detalles(id_cliente)
+    carrito = CarritoService.obtener_carrito_anonimo()
+
     detalles = carrito.get("Detalles", []) if isinstance(carrito, dict) else []
     total = sum([d["Subtotal"] for d in detalles])
 
-    # 👇 aquí obtienes los productos activos
     productos = CarritoService.obtener_productos_disponibles()
+
+    # ⚠️ ESTA ES LA LÍNEA QUE TE FALTABA
+    id_carrito = carrito.get("IdCarrito") if isinstance(carrito, dict) else None
 
     return render_template(
         "carrito/carrito.html",
         detalles=detalles,
         total=total,
         carrito_count=len(detalles),
-        productos=productos   # 👈 ahora sí pasas la lista al template
+        productos=productos,
+        id_carrito=id_carrito   # ✔ AQUÍ LO ENVÍAS AL HTML
     )
 
 

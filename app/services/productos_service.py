@@ -1,6 +1,7 @@
 from app.extensions import db
 from app.models.productos import Productos
-
+from app.models.carrito_detalle import CarritoDetalle
+from app.models.pedidos_detalle import PedidosDetalle
 class ProductosService:
 
     @staticmethod
@@ -81,21 +82,43 @@ class ProductosService:
             db.session.rollback()
             return {"error": f"Error al desactivar producto: {str(e)}"}
 
+
+#Metodo editado arreglos
     @staticmethod
     def eliminar_fisico(id_producto):
-        """Eliminar físicamente un producto de la BD"""
+        """Eliminar físicamente un producto de la BD
+        
+        Primero elimina los registros relacionados en CarritoDetalle y PedidosDetalle
+        para evitar errores de integridad referencial.
+        """
         try:
             producto = db.session.query(Productos).get(id_producto)
             if not producto:
                 return {"error": "Producto no encontrado"}
 
+            # Primero eliminar los registros relacionados en CarritoDetalle
+            detalles_carrito = db.session.query(CarritoDetalle).filter(
+                CarritoDetalle.IdProducto == id_producto
+            ).all()
+            for detalle in detalles_carrito:
+                db.session.delete(detalle)
+
+            # Luego eliminar los registros relacionados en PedidosDetalle
+            detalles_pedido = db.session.query(PedidosDetalle).filter(
+                PedidosDetalle.IdProducto == id_producto
+            ).all()
+            for detalle in detalles_pedido:
+                db.session.delete(detalle)
+
+            # Finalmente eliminar el producto
             db.session.delete(producto)
             db.session.commit()
             return {"message": "Producto eliminado correctamente"}
         except Exception as e:
             db.session.rollback()
-            return {"error": f"Error al eliminar producto: {str(e)}"}
-
+            error_msg = str(e)
+            return {"error": f"Error al eliminar producto: {error_msg}"}
+#hasta acá
     @staticmethod
     def buscar_por_nombre(nombre):
         """Buscar productos por nombre (búsqueda parcial)"""

@@ -26,6 +26,54 @@ class CarritoService:
         if not carrito:
             return {"error": "Carrito no encontrado"}
         return CarritoService.to_dict(carrito)
+    @staticmethod
+    def obtener_carrito_anonimo():
+        """Obtiene el carrito anónimo o lo crea si no existe."""
+        carrito = db.session.query(Carrito).filter(Carrito.IdCliente == None).first()
+
+        if carrito:
+            return CarritoService.to_dict(carrito)
+
+        # Si no existe, se crea un carrito sin cliente
+        carrito = Carrito(IdCliente=None)
+        db.session.add(carrito)
+        db.session.commit()
+
+        return CarritoService.to_dict(carrito)
+    @staticmethod
+    def obtener_carrito_anonimo_con_detalles():
+        carrito = db.session.query(Carrito).filter(Carrito.IdCliente == None).first()
+
+        if not carrito:
+            carrito = Carrito(IdCliente=None)
+            db.session.add(carrito)
+            db.session.commit()
+
+        return CarritoService.obtener_con_detalles_por_id(carrito.IdCarrito)
+    @staticmethod
+    def obtener_con_detalles_por_id(id_carrito):
+        carrito = db.session.query(Carrito).get(id_carrito)
+        if not carrito:
+            return {"error": "Carrito no encontrado"}
+
+        detalles = db.session.query(CarritoDetalle).filter(
+            CarritoDetalle.IdCarrito == id_carrito
+        ).all()
+
+        detalles_dict = [{
+            "IdDetalle": d.IdDetalle,
+            "IdProducto": d.IdProducto,
+            "Cantidad": d.Cantidad,
+            "PrecioUnitario": float(d.PrecioUnitario or 0),
+            "Subtotal": float(d.Subtotal or 0)
+        } for d in detalles]
+
+        return {
+            "IdCarrito": carrito.IdCarrito,
+            "Detalles": detalles_dict
+        }
+
+
 
     @staticmethod
     def crear_carrito(id_cliente):
@@ -37,7 +85,7 @@ class CarritoService:
             if carrito_existente:
                 return {"error": "El cliente ya tiene un carrito", "IdCarrito": carrito_existente.IdCarrito}
 
-            carrito = Carrito(IdCliente=id_cliente)
+            carrito = Carrito()
             db.session.add(carrito)
             db.session.commit()
             return CarritoService.to_dict(carrito)
@@ -45,6 +93,7 @@ class CarritoService:
         except Exception as e:
             db.session.rollback()
             return {"error": f"Error al crear carrito: {str(e)}"}
+        
 
     @staticmethod
     def actualizar(id_carrito, data):
@@ -210,3 +259,4 @@ class CarritoService:
             "IdCliente": c.IdCliente,
             "FechaCreacion": str(c.FechaCreacion)
         }
+    

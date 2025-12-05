@@ -99,16 +99,16 @@
       return;
     }
   
-    const clienteId = document.getElementById("clienteId").value;
+    const clienteId = document.getElementById("clienteId").value.trim();
     const data = {
-      IdCliente: clienteId || null,
       Nombre: document.getElementById("nombre").value,
       Correo: document.getElementById("correo").value,
       Telefono: document.getElementById("telefono").value,
       Direccion: document.getElementById("direccion").value
     };
-  
+
     try {
+      // Si clienteId está vacío, es una creación (POST), si no, es una edición (PUT)
       const url = clienteId ? `/clientes/${clienteId}` : `/clientes`;
       const method = clienteId ? "PUT" : "POST";
   
@@ -122,6 +122,8 @@
   
       // Cerrar modal y recargar tabla
       bootstrap.Modal.getInstance(document.getElementById("modalCliente")).hide();
+      // Limpiar el formulario después de guardar
+      nuevoCliente();
       cargarClientes();
     } catch (err) {
       console.error(err);
@@ -140,18 +142,54 @@
   }
   
   async function confirmarEliminar() {
+    if (!clienteEliminarId) {
+      alert("No se ha seleccionado ningún cliente para eliminar.");
+      return;
+    }
+
     try {
       const response = await fetch(`/clientes/${clienteEliminarId}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Error al eliminar cliente");
-  
+      
+      // Intentar obtener el mensaje de error del servidor
+      let errorMessage = "Error al eliminar el cliente";
+      if (!response.ok) {
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          // Si no se puede parsear el JSON, usar el status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
       bootstrap.Modal.getInstance(document.getElementById("modalEliminar")).hide();
       cargarClientes();
     } catch (err) {
-      console.error(err);
-      alert("Hubo un error al eliminar el cliente.");
+      console.error("Error al eliminar cliente:", err);
+      alert(err.message || "Hubo un error al eliminar el cliente.");
     }
   }
-  
+  // =========================
+  // NUEVO CLIENTE
+  // =========================
+  function nuevoCliente() {
+    // Limpiar el formulario
+    document.getElementById("formCliente").reset();
+    // Asegurarse de que el clienteId esté vacío
+    document.getElementById("clienteId").value = "";
+    
+    // Cambiar título del modal
+    document.getElementById("modalTitulo").textContent = "Nuevo Cliente";
+    
+    // Habilitar todos los inputs
+    document.querySelectorAll("#formCliente input, #formCliente textarea").forEach(el => el.disabled = false);
+    
+    // Remover clases de validación
+    document.getElementById("formCliente").classList.remove("was-validated");
+  }
+
   // =========================
   // EDITAR CLIENTE
   // =========================
@@ -159,21 +197,24 @@
     try {
       const response = await fetch(`/clientes/${id}`);
       if (!response.ok) throw new Error("Error al obtener cliente");
-  
+
       const cliente = await response.json();
-  
+
       // Cambiar título del modal
       document.getElementById("modalTitulo").textContent = "Editar Cliente";
-  
+
       // Llenar campos
       document.getElementById("clienteId").value = cliente.IdCliente;
       document.getElementById("nombre").value = cliente.Nombre;
       document.getElementById("correo").value = cliente.Correo;
       document.getElementById("telefono").value = cliente.Telefono || "";
       document.getElementById("direccion").value = cliente.Direccion || "";
-  
+
       // Habilitar inputs
       document.querySelectorAll("#formCliente input, #formCliente textarea").forEach(el => el.disabled = false);
+      
+      // Remover clases de validación
+      document.getElementById("formCliente").classList.remove("was-validated");
     } catch (err) {
       console.error(err);
       alert("Error al cargar datos del cliente.");
@@ -206,6 +247,17 @@
     }
   }
   
+  // =========================
+  // LIMPIAR FORMULARIO AL CERRAR MODAL
+  // =========================
+  const modalCliente = document.getElementById("modalCliente");
+  if (modalCliente) {
+    modalCliente.addEventListener("hidden.bs.modal", function () {
+      // Limpiar el formulario cuando se cierra el modal
+      nuevoCliente();
+    });
+  }
+
   // =========================
   // INICIALIZACIÓN
   // =========================

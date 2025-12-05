@@ -78,11 +78,11 @@ class PedidosService:
                     "precio_unitario": precio_unitario
                 })
 
-            # Crear pedido
+            # Crear pedido (no especificar Estado para usar el valor por defecto de la BD)
             pedido = Pedidos(
                 IdCliente=id_cliente,
-                Total=total,
-                Estado="Pendiente"
+                Total=total
+                # Estado se omite para usar el server_default del modelo: N'Pendiente'
             )
             db.session.add(pedido)
             db.session.flush()  # Para obtener el ID del pedido
@@ -145,11 +145,21 @@ class PedidosService:
                 })
             
             # Crear pedido
+            # Validar estado si se proporciona
+            estado = data.get("Estado")
+            estados_validos = ["Cancelado", "Entregado", "Enviado", "Pagado", "Pendiente"]
+            
+            if estado and estado not in estados_validos:
+                return {"error": f"Estado inválido: {estado}. Estados válidos: {', '.join(estados_validos)}"}
+            
+            # No especificar Estado si no se proporciona, para usar el valor por defecto de la BD (N'Pendiente')
             pedido = Pedidos(
                 IdCliente=data.get("IdCliente"),
-                Total=total,
-                Estado=data.get("Estado", "Pendiente")
+                Total=total
             )
+            # Solo establecer Estado si se proporcionó explícitamente y es válido
+            if estado:
+                pedido.Estado = estado
             db.session.add(pedido)
             db.session.flush()  # Para obtener el ID del pedido
             
@@ -174,6 +184,15 @@ class PedidosService:
     @staticmethod
     def actualizar(id_pedido, data):
         """Actualizar un pedido existente (solo información básica, no detalles)"""
+        # Estados válidos según el CHECK constraint de la base de datos
+        estados_validos = ["Cancelado", "Entregado", "Enviado", "Pagado", "Pendiente"]
+        
+        # Validar estado si se proporciona
+        if "Estado" in data:
+            estado = data["Estado"]
+            if estado not in estados_validos:
+                return {"error": f"Estado inválido: {estado}. Estados válidos: {', '.join(estados_validos)}"}
+        
         try:
             pedido = db.session.query(Pedidos).get(id_pedido)
             if not pedido:
@@ -220,6 +239,12 @@ class PedidosService:
     @staticmethod
     def cambiar_estado(id_pedido, nuevo_estado):
         """Cambiar el estado de un pedido"""
+        # Estados válidos según el CHECK constraint de la base de datos
+        estados_validos = ["Cancelado", "Entregado", "Enviado", "Pagado", "Pendiente"]
+        
+        if nuevo_estado not in estados_validos:
+            return {"error": f"Estado inválido: {nuevo_estado}. Estados válidos: {', '.join(estados_validos)}"}
+        
         try:
             pedido = db.session.query(Pedidos).get(id_pedido)
             if not pedido:

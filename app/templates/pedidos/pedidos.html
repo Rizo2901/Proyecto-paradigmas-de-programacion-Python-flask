@@ -12,13 +12,16 @@
     </div>
 
     <div class="filtros-container">
-        <select id="filtroEstado" onchange="cargarPedidos()">
-            <option value="">Todos los estados</option>
+        <label for="filtroEstado">Filtrar por estado:</label>
+        <select id="filtroEstado" name="Estado">
+            <option value="">Todos</option>
             <option value="Pendiente">Pendiente</option>
-            <option value="En Proceso">En Proceso</option>
-            <option value="Completado">Completado</option>
+            <option value="Enviado">Enviado</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Pagado">Pagado</option>
             <option value="Cancelado">Cancelado</option>
         </select>
+        <button onclick="cargarPedidos()">Filtrar</button>
     </div>
 
     <div class="table-container">
@@ -65,8 +68,9 @@
                     <label for="estado">Estado</label>
                     <select id="estado" name="Estado">
                         <option value="Pendiente">Pendiente</option>
-                        <option value="En Proceso">En Proceso</option>
-                        <option value="Completado">Completado</option>
+                        <option value="Enviado">Enviado</option>
+                        <option value="Entregado">Entregado</option>
+                        <option value="Pagado">Pagado</option>
                         <option value="Cancelado">Cancelado</option>
                     </select>
                 </div>

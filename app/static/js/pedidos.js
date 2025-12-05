@@ -4,6 +4,7 @@ let clientes = [];
 let productos = [];
 let detallesPedido = [];
 let pedidoEditandoId = null;
+let detallesOriginales = []; // Para comparar al editar
 
 // Inicialización cuando se carga la página
 document.addEventListener("DOMContentLoaded", () => {
@@ -32,17 +33,21 @@ document.addEventListener("DOMContentLoaded", () => {
 // Función para cargar pedidos
 async function cargarPedidos() {
     try {
-        const estado = document.getElementById("filtroEstado").value;
-        const url = estado ? `/pedidos?estado=${estado}` : "/pedidos";
+        const filtroEstado = document.getElementById("filtroEstado");
+        const estado = filtroEstado ? filtroEstado.value : "";
+        const url = estado && estado !== "" ? `/pedidos?estado=${estado}` : "/pedidos";
         
         const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         
         pedidos = data;
         renderizarPedidos();
     } catch (error) {
         console.error("Error al cargar pedidos:", error);
-        mostrarError("Error al cargar los pedidos");
+        mostrarError("Error al cargar los pedidos: " + error.message);
     }
 }
 
@@ -116,9 +121,11 @@ function renderizarPedidos() {
 function abrirModalCrear() {
     pedidoEditandoId = null;
     detallesPedido = [];
+    detallesOriginales = [];
     document.getElementById("modalTitulo").textContent = "Nuevo Pedido";
     document.getElementById("pedidoId").value = "";
     document.getElementById("idCliente").value = "";
+    document.getElementById("idCliente").disabled = false;
     document.getElementById("estado").value = "Pendiente";
     document.getElementById("totalPedido").textContent = "0.00";
     document.getElementById("detalles-list").innerHTML = "";
@@ -136,8 +143,15 @@ async function editarPedido(idPedido) {
             return;
         }
         
+        // Validar que el pedido esté en estado Pendiente
+        if (pedido.Estado !== "Pendiente") {
+            mostrarError(`Solo se pueden editar pedidos en estado Pendiente. Estado actual: ${pedido.Estado}`);
+            return;
+        }
+        
         pedidoEditandoId = idPedido;
-        detallesPedido = pedido.Detalles || [];
+        detallesPedido = JSON.parse(JSON.stringify(pedido.Detalles || [])); // Copia profunda
+        detallesOriginales = JSON.parse(JSON.stringify(pedido.Detalles || [])); // Guardar originales para comparar
         
         document.getElementById("modalTitulo").textContent = `Editar Pedido #${idPedido}`;
         document.getElementById("pedidoId").value = idPedido;
@@ -156,7 +170,12 @@ async function editarPedido(idPedido) {
 }
 
 // Función para cerrar modal
-
+function cerrarModal() {
+    document.getElementById("modalPedido").style.display = "none";
+    pedidoEditandoId = null;
+    detallesPedido = [];
+    detallesOriginales = [];
+}
 
 // Función para agregar detalle
 function agregarDetalle() {
@@ -240,6 +259,149 @@ function calcularTotal() {
     document.getElementById("totalPedido").textContent = total.toFixed(2);
 }
 
+// Función para actualizar un pedido completo (información básica + detalles)
+async function actualizarPedidoCompleto(idPedido, formData) {
+    try {
+        // 1. Actualizar información básica del pedido (Estado)
+        const updateResponse = await fetch(`/pedidos/${idPedido}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                Estado: formData.Estado
+            })
+        });
+        
+        const updateResult = await updateResponse.json();
+        if (updateResult.error) {
+            return updateResult;
+        }
+        
+        // 2. Obtener detalles actuales del servidor
+        const detallesResponse = await fetch(`/pedidos/${idPedido}/detalles`);
+        const detallesActuales = await detallesResponse.json();
+        
+        if (detallesActuales.error) {
+            return detallesActuales;
+        }
+        
+        // 3. Sincronizar detalles: comparar nuevos con actuales
+        const detallesNuevos = formData.detalles || [];
+        const detallesParaEliminar = [];
+        const detallesParaCrear = [];
+        const detallesParaActualizar = [];
+        
+        // Identificar detalles a eliminar (están en actuales pero no en nuevos)
+        detallesActuales.forEach(detalleActual => {
+            const existeEnNuevos = detallesNuevos.some(d => {
+                // Buscar por IdDetalle si existe
+                if (detalleActual.IdDetalle) {
+                    return d.IdDetalle === detalleActual.IdDetalle;
+                }
+                return false;
+            });
+            
+            if (!existeEnNuevos) {
+                detallesParaEliminar.push(detalleActual);
+            }
+        });
+        
+        // Identificar detalles a crear/actualizar
+        detallesNuevos.forEach(detalleNuevo => {
+            // Buscar detalle existente por IdDetalle si está disponible
+            let detalleExistente = null;
+            if (detalleNuevo.IdDetalle) {
+                detalleExistente = detallesActuales.find(d => d.IdDetalle === detalleNuevo.IdDetalle);
+            }
+            
+            // Si no se encontró por IdDetalle, buscar por IdProducto
+            if (!detalleExistente) {
+                detalleExistente = detallesActuales.find(d => d.IdProducto === detalleNuevo.IdProducto);
+            }
+            
+            if (!detalleExistente) {
+                // Nuevo detalle a crear
+                detallesParaCrear.push({
+                    IdProducto: detalleNuevo.IdProducto,
+                    Cantidad: detalleNuevo.Cantidad,
+                    PrecioUnitario: detalleNuevo.PrecioUnitario
+                });
+            } else {
+                // Verificar si necesita actualización
+                const cambioCantidad = detalleExistente.Cantidad !== detalleNuevo.Cantidad;
+                const cambioPrecio = Math.abs((detalleExistente.PrecioUnitario || 0) - (detalleNuevo.PrecioUnitario || 0)) > 0.01;
+                const cambioProducto = detalleExistente.IdProducto !== detalleNuevo.IdProducto;
+                
+                if (cambioCantidad || cambioPrecio || cambioProducto) {
+                    if (cambioProducto) {
+                        // Si cambió el producto, eliminar el viejo y crear uno nuevo
+                        detallesParaEliminar.push(detalleExistente);
+                        detallesParaCrear.push({
+                            IdProducto: detalleNuevo.IdProducto,
+                            Cantidad: detalleNuevo.Cantidad,
+                            PrecioUnitario: detalleNuevo.PrecioUnitario
+                        });
+                    } else {
+                        // Actualizar detalle existente
+                        detallesParaActualizar.push({
+                            idDetalle: detalleExistente.IdDetalle,
+                            data: {
+                                Cantidad: detalleNuevo.Cantidad,
+                                PrecioUnitario: detalleNuevo.PrecioUnitario
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        
+        // 4. Ejecutar cambios: primero eliminar, luego crear, luego actualizar
+        // Eliminar detalles
+        for (const detalle of detallesParaEliminar) {
+            const deleteResponse = await fetch(`/pedidos/${idPedido}/detalles/${detalle.IdDetalle}`, {
+                method: "DELETE"
+            });
+            const deleteResult = await deleteResponse.json();
+            if (deleteResult.error) {
+                return deleteResult;
+            }
+        }
+        
+        // Crear nuevos detalles
+        for (const detalle of detallesParaCrear) {
+            const createResponse = await fetch(`/pedidos/${idPedido}/detalles`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(detalle)
+            });
+            const createResult = await createResponse.json();
+            if (createResult.error) {
+                return createResult;
+            }
+        }
+        
+        // Actualizar detalles existentes
+        for (const { idDetalle, data } of detallesParaActualizar) {
+            const updateResponse = await fetch(`/pedidos/${idPedido}/detalles/${idDetalle}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            const updateResult = await updateResponse.json();
+            if (updateResult.error) {
+                return updateResult;
+            }
+        }
+        
+        // 5. Obtener el pedido actualizado
+        const finalResponse = await fetch(`/pedidos/${idPedido}`);
+        return await finalResponse.json();
+        
+    } catch (error) {
+        console.error("Error al actualizar pedido:", error);
+        return { error: `Error al actualizar pedido: ${error.message}` };
+    }
+}
+
 // Función para guardar pedido
 document.getElementById("formPedido").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -266,6 +428,7 @@ document.getElementById("formPedido").addEventListener("submit", async (e) => {
         IdCliente: parseInt(document.getElementById("idCliente").value),
         Estado: document.getElementById("estado").value,
         detalles: detallesPedido.map(d => ({
+            IdDetalle: d.IdDetalle || null, // Preservar IdDetalle si existe
             IdProducto: parseInt(d.IdProducto),
             Cantidad: parseInt(d.Cantidad),
             PrecioUnitario: parseFloat(d.PrecioUnitario)
@@ -273,31 +436,30 @@ document.getElementById("formPedido").addEventListener("submit", async (e) => {
     };
     
     try {
-        let response;
+        let resultado;
         if (pedidoEditandoId) {
-            // Actualizar pedido existente - esto es complejo, necesitamos actualizar detalles individualmente
-            mostrarError("La edición de pedidos está en desarrollo. Por favor, elimine y vuelva a crear.");
-            return;
+            // Actualizar pedido existente
+            resultado = await actualizarPedidoCompleto(pedidoEditandoId, formData);
         } else {
-            response = await fetch("/pedidos", {
+            // Crear nuevo pedido
+            const response = await fetch("/pedidos", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             });
+            resultado = await response.json();
         }
-        
-        const resultado = await response.json();
         
         if (resultado.error) {
             mostrarError(resultado.error);
         } else {
             cerrarModal();
             cargarPedidos();
-            mostrarExito("Pedido guardado correctamente");
+            mostrarExito(pedidoEditandoId ? "Pedido actualizado correctamente" : "Pedido guardado correctamente");
         }
     } catch (error) {
         console.error("Error al guardar pedido:", error);
-        mostrarError("Error al guardar el pedido");
+        mostrarError("Error al guardar el pedido: " + error.message);
     }
 });
 
@@ -358,7 +520,8 @@ function cerrarModalDetalles() {
 
 // Función para cambiar estado del pedido
 async function cambiarEstado(idPedido) {
-    const estados = ["Pendiente", "En Proceso", "Completado", "Cancelado"];
+    // Estados válidos según el CHECK constraint de la base de datos
+    const estados = ["Pendiente", "Enviado", "Entregado", "Pagado", "Cancelado"];
     const pedido = pedidos.find(p => p.IdPedido === idPedido);
     if (!pedido) return;
     

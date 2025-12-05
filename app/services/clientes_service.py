@@ -1,5 +1,9 @@
 from app.extensions import db
 from app.models.clientes import Clientes
+from app.models.pedidos import Pedidos
+from app.models.pedidos_detalle import PedidosDetalle
+from app.models.carrito import Carrito
+from app.models.carrito_detalle import CarritoDetalle
 
 class ClientesService:
 
@@ -59,18 +63,50 @@ class ClientesService:
 
     @staticmethod
     def eliminar(id_cliente):
-        """Eliminar un cliente"""
+       
         try:
             cliente = db.session.query(Clientes).get(id_cliente)
             if not cliente:
                 return {"error": "Cliente no encontrado"}
 
+            # 1. Eliminar detalles de pedidos relacionados
+            pedidos = db.session.query(Pedidos).filter(
+                Pedidos.IdCliente == id_cliente
+            ).all()
+            
+            for pedido in pedidos:
+                # Eliminar detalles de cada pedido
+                detalles_pedido = db.session.query(PedidosDetalle).filter(
+                    PedidosDetalle.IdPedido == pedido.IdPedido
+                ).all()
+                for detalle in detalles_pedido:
+                    db.session.delete(detalle)
+                # Eliminar el pedido
+                db.session.delete(pedido)
+
+            # 2. Eliminar carritos y sus detalles
+            carritos = db.session.query(Carrito).filter(
+                Carrito.IdCliente == id_cliente
+            ).all()
+            
+            for carrito in carritos:
+                # Eliminar detalles de cada carrito
+                detalles_carrito = db.session.query(CarritoDetalle).filter(
+                    CarritoDetalle.IdCarrito == carrito.IdCarrito
+                ).all()
+                for detalle in detalles_carrito:
+                    db.session.delete(detalle)
+                # Eliminar el carrito
+                db.session.delete(carrito)
+
+            # 3. Finalmente eliminar el cliente
             db.session.delete(cliente)
             db.session.commit()
             return {"message": "Cliente eliminado correctamente"}
         except Exception as e:
             db.session.rollback()
-            return {"error": f"Error al eliminar cliente: {str(e)}"}
+            error_msg = str(e)
+            return {"error": f"Error al eliminar cliente: {error_msg}"}
 
     @staticmethod
     def buscar_por_correo(correo):

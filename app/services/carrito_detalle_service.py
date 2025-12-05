@@ -51,27 +51,23 @@ class CarritoDetalleService:
             return {"error": "Producto no disponible"}
 
         # 2. Buscar el último carrito del cliente
+        # 2. Buscar carrito anónimo (IdCliente NULL)
         carrito = (
             db.session.query(Carrito)
-            .filter_by(IdCliente=1)  # ⚠️ Ajusta al cliente actual
+            .filter(Carrito.IdCliente == None)
             .order_by(Carrito.IdCarrito.desc())
             .first()
         )
 
+        # Si no existe, crear uno
         if not carrito:
-            # Si no existe ninguno, crear uno nuevo
-            try:
-                carrito = Carrito(IdCliente=1)  # ⚠️ Ajusta campos según tu modelo
-                db.session.add(carrito)
-                db.session.commit()
-                print(f"[CarritoDetalleService] Carrito creado: IdCarrito={carrito.IdCarrito}")
-            except Exception as e:
-                db.session.rollback()
-                tb = traceback.format_exc()
-                print(f"[CarritoDetalleService] Error al crear carrito: {str(e)}\n{tb}")
-                return {"error": f"Error al crear carrito: {str(e)}", "trace": tb}
+            carrito = Carrito(IdCliente=None)
+            db.session.add(carrito)
+            db.session.commit()
+            print(f"[CarritoDetalleService] Carrito anónimo creado: IdCarrito={carrito.IdCarrito}")
 
         id_carrito = carrito.IdCarrito
+
 
         # 3. Buscar detalle existente
         detalle_existente = db.session.query(CarritoDetalle).filter_by(
