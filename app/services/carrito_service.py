@@ -92,13 +92,32 @@ class CarritoService:
             CarritoDetalle.IdCarrito == id_carrito
         ).all()
 
-        detalles_dict = [{
-            "IdDetalle": d.IdDetalle,
-            "IdProducto": d.IdProducto,
-            "Cantidad": d.Cantidad,
-            "PrecioUnitario": float(d.PrecioUnitario or 0),
-            "Subtotal": float(d.Subtotal or 0)
-        } for d in detalles]
+        # Obtener nombre del producto para cada detalle de forma segura
+        from app.models.productos import Productos
+        detalles_dict = []
+        for d in detalles:
+            nombre_producto = ""
+            stock = 0
+            try:
+                prod = db.session.query(Productos).filter(Productos.IdProducto == d.IdProducto).first()
+                if prod and hasattr(prod, "Nombre"):
+                    nombre_producto = prod.Nombre
+                if prod and hasattr(prod, "Stock"):
+                    stock = prod.Stock
+            except Exception:
+                nombre_producto = ""
+                stock = 0
+            
+            detalles_dict.append({
+                "IdDetalle": d.IdDetalle,
+                "IdCarrito": d.IdCarrito,
+                "IdProducto": d.IdProducto,
+                "Cantidad": d.Cantidad,
+                "PrecioUnitario": float(d.PrecioUnitario or 0),
+                "Subtotal": float(d.Subtotal or 0),
+                "NombreProducto": nombre_producto,
+                "Stock": stock
+            })
 
         return {
             "IdCarrito": carrito.IdCarrito,
