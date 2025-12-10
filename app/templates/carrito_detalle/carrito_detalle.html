@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Carrito de Compras - Pokemon Carts{% endblock %}
+
+{% block content %}
+
+<div class="clientes-container">
+    <div class="clientes-header d-flex justify-content-between align-items-center">
+        <h2>Carrito de Compras</h2>
+
+        {% if detalles|length > 0 %}
+        <button class="btn btn-primary" onclick="openModal('modalFinalizar')">
+            Finalizar Compra 🛒
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Botón para abrir modal de agregar producto -->
+    <div class="mb-3">
+        <button class="btn btn-primary"  onclick="openModal('modalAgregar')">+ Agregar Producto</button>
+    </div>
+    <!-- Hidden carrito id para JS -->
+    <input type="hidden" id="idCarrito" value="{{ id_carrito }}">
+
+    <!-- Tabla del carrito -->
+    <div class="table-container">
+        <table class="clientes-table">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID Producto</th>
+                    <th>Nombre</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unitario</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% if detalles|length == 0 %}
+                    <tr>
+                        <td colspan="6" class="text-center">Tu carrito está vacío</td>
+                    </tr>
+                {% else %}
+                    {% for item in detalles %}
+                        <tr>
+                        <td>{{ item.IdProducto }}</td>
+                            <td>{{ item.NombreProducto }}</td>
+                            <td>{{ item.Cantidad }}</td>
+                            <td>₡{{ item.PrecioUnitario }}</td>
+                            <td>₡{{ item.Subtotal }}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="openEditarModal('{{ item.IdDetalle }}', '{{ item.IdCarrito }}', '{{ item.IdProducto }}', '{{ item.Cantidad }}', '{{ item.Stock or 0 }}', '{{ item.NombreProducto | e }}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="openEliminarModal('{{ item.IdDetalle }}', '{{ item.IdCarrito }}', '{{ item.IdProducto }}')">Eliminar</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total %}
+    <div class="cart-total-box mt-3">
+        <h3>Total a pagar: <span class="total-money">₡{{ total }}</span></h3>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Agregar -->
+<div class="modal fade" id="modalAgregar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="formAgregar" class="modal-content needs-validation" onsubmit="handleAgregarForm(event)" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar Producto al Carrito</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="producto" class="form-label">Producto</label>
+          <select id="producto" name="IdProducto" class="form-select" required>
+            <option value="">Seleccione una carta</option>
+            {% for p in productos %}
+              <option value="{{ p.IdProducto }}">{{ p.Nombre }} - ₡{{ p.Precio }} (Stock: {{ p.Stock }})</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Debe seleccionar un producto.</div>
+        </div>
+        <div class="mb-3">
+          <label for="cantidad" class="form-label">Cantidad </label>
+          <input type="number" id="cantidad" name="Cantidad" class="form-control" min="1" value="1" required>
+          <div class="invalid-feedback">Ingrese una cantidad válida.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-success">Agregar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="formEditar" class="modal-content needs-validation" method="POST" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Cantidad</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editarDetalleId" name="IdDetalle">
+        <input type="hidden" id="editarCarritoId" name="IdCarrito">
+        <div class="mb-3">
+          <label for="editarProductoId" class="form-label">Producto</label>
+          <select id="editarProductoId" name="IdProducto" class="form-select">
+            <option value="">Seleccione una carta</option>
+            {% for p in productos %}
+              <option value="{{ p.IdProducto }}">{{ p.Nombre }} - ₡{{ p.Precio }} (Stock: {{ p.Stock }})</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Debe seleccionar un producto.</div>
+        </div>
+        <div class="mb-3">
+          <label for="editarCantidad" class="form-label">Cantidad *</label>
+          <input type="number" id="editarCantidad" name="Cantidad" class="form-control" min="1" required>
+          <div class="invalid-feedback">Ingrese una cantidad válida.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-warning">Actualizar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="formEliminar" class="modal-content" method="POST">
+      <div class="modal-header">
+        <h5 class="modal-title">Eliminar Producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas eliminar este producto del carrito?</p>
+        <input type="hidden" id="eliminarDetalleId" name="IdDetalle">
+        <input type="hidden" id="eliminarCarritoId" name="IdCarrito">
+        <input type="hidden" id="eliminarProductoId" name="IdProducto">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Finalizar -->
+<div class="modal fade" id="modalFinalizar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Finalizar Compra</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Deseas confirmar la compra de tu carrito?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="confirmarCompra()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(id) {
+  const modal = new bootstrap.Modal(document.getElementById(id));
+  modal.show();
+}
+
+function openEditarModal(idDetalle, idCarrito, idProducto, cantidad, stock, nombreProducto) {
+  document.getElementById("editarDetalleId").value = idDetalle;
+  document.getElementById("editarCarritoId").value = idCarrito;
+  document.getElementById("editarProductoId").value = idProducto;
+  const input = document.getElementById("editarCantidad");
+  input.value = cantidad;
+  input.max = stock;
+  // Si el producto no está en el select (p.ej. ya no tiene stock), añadir temporalmente la opción
+  const select = document.getElementById("editarProductoId");
+  if (select && Array.from(select.options).every(o => o.value !== String(idProducto))) {
+    const opt = document.createElement('option');
+    opt.value = idProducto;
+    opt.textContent = nombreProducto || `Producto ${idProducto}`;
+    select.appendChild(opt);
+    select.value = idProducto;
+  }
+  openModal("modalEditar");
+}
+
+function openEliminarModal(idDetalle, idCarrito, idProducto) {
+  document.getElementById("eliminarDetalleId").value = idDetalle;
+  document.getElementById("eliminarCarritoId").value = idCarrito;
+  document.getElementById("eliminarProductoId").value = idProducto;
+  openModal("modalEliminar");
+}
+
+function confirmarCompra() {
+  // Redirigir a la página de facturación
+  window.location.href = '/facturacion/pagina';
+}
+</script>
+
+{% endblock %}
