@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Pedidos - Pokemon Carts{% endblock %}
+
+{% block content %}
+<div class="pedidos-container">
+    <div class="pedidos-header">
+        <h2>Gestión de Pedidos</h2>
+        <button class="btn-primary" onclick="abrirModalCrear()">
+            <span>+</span> Nuevo Pedido
+        </button>
+    </div>
+
+    <div class="filtros-container">
+        <label for="filtroEstado">Filtrar por estado:</label>
+        <select id="filtroEstado" name="Estado">
+            <option value="">Todos</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Enviado">Enviado</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Pagado">Pagado</option>
+            <option value="Cancelado">Cancelado</option>
+        </select>
+        <button onclick="cargarPedidos()">Filtrar</button>
+    </div>
+
+    <div class="table-container">
+        <table class="pedidos-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Items</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="pedidos-tbody">
+                <tr>
+                    <td colspan="7" class="loading">Cargando pedidos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Pedido -->
+<div id="modalPedido" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Nuevo Pedido</h3>
+            <span class="close" onclick="cerrarModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formPedido">
+                <input type="hidden" id="pedidoId" name="IdPedido">
+                
+                <div class="form-group">
+                    <label for="idCliente">Cliente *</label>
+                    <select id="idCliente" name="IdCliente" required>
+                        <option value="">Seleccione un cliente</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="estado">Estado</label>
+                    <select id="estado" name="Estado">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Enviado">Enviado</option>
+                        <option value="Entregado">Entregado</option>
+                        <option value="Pagado">Pagado</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Detalles del Pedido</label>
+                    <div class="detalles-container">
+                        <div id="detalles-list"></div>
+                        <button type="button" class="btn-secondary" onclick="agregarDetalle()">+ Agregar Carta</button>
+                    </div>
+                </div>
+
+                <div class="total-container">
+                    <strong>Total: $<span id="totalPedido">0.00</span></strong>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Ver Detalles del Pedido -->
+<div id="modalDetalles" class="modal">
+    <div class="modal-content modal-medium">
+        <div class="modal-header">
+            <h3>Detalles del Pedido #<span id="detallesPedidoId"></span></h3>
+            <span class="close" onclick="cerrarModalDetalles()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="detalles-contenido">
+                <p class="loading">Cargando detalles...</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="cerrarModalDetalles()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Eliminar -->
+<div id="modalEliminar" class="modal">
+    <div class="modal-content modal-small">
+        <div class="modal-header">
+            <h3>Confirmar Eliminación</h3>
+            <span class="close" onclick="cerrarModalEliminar()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>¿Estás seguro de que deseas eliminar el pedido #<strong id="pedidoIdEliminar"></strong>?</p>
+            <p class="warning-text">Esta acción restaurará el stock de los productos y no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="cerrarModalEliminar()">Cancelar</button>
+            <button type="button" class="btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/pedidos.js') }}"></script>
+{% endblock %}
+

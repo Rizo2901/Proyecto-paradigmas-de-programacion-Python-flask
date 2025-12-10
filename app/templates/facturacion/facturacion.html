@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles de Facturación - Pokemon Carts{% endblock %}
+
+{% block content %}
+
+<div class="facturacion-container">
+    <div class="facturacion-header">
+        <h2>🧾 Detalles de Facturación</h2>
+        <p class="facturacion-subtitle">Complete sus datos para finalizar la compra</p>
+    </div>
+
+    <div class="facturacion-content">
+        <!-- Resumen del pedido -->
+        <div class="resumen-pedido">
+            <h3>📦 Resumen de tu Pedido</h3>
+            <div class="resumen-items">
+                {% for item in detalles %}
+                <div class="resumen-item">
+                    <span class="item-nombre">{{ item.NombreProducto }}</span>
+                    <span class="item-cantidad">x{{ item.Cantidad }}</span>
+                    <span class="item-precio">₡{{ item.Subtotal }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="resumen-total">
+                <span>Total a pagar:</span>
+                <span class="total-amount">₡{{ total }}</span>
+            </div>
+        </div>
+
+        <!-- Formulario de facturación -->
+        <div class="facturacion-form-container">
+            <form id="formFacturacion" class="facturacion-form needs-validation" novalidate>
+                <input type="hidden" id="idCarrito" name="IdCarrito" value="{{ id_carrito }}">
+                <input type="hidden" id="totalPedido" name="Total" value="{{ total }}">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre" class="form-label">Nombre <span class="required">*</span></label>
+                        <input type="text" id="nombre" name="Nombre" class="form-control" 
+                               placeholder="Ingrese su nombre" required>
+                        <div class="invalid-feedback">El nombre es obligatorio.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apellidos" class="form-label">Apellidos <span class="required">*</span></label>
+                        <input type="text" id="apellidos" name="Apellidos" class="form-control" 
+                               placeholder="Ingrese sus apellidos" required>
+                        <div class="invalid-feedback">Los apellidos son obligatorios.</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="telefono" class="form-label">Teléfono <span class="required">*</span></label>
+                        <input type="tel" id="telefono" name="Telefono" class="form-control" 
+                               placeholder="Ej: 8888-8888" required>
+                        <div class="invalid-feedback">El teléfono es obligatorio.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email <span class="required">*</span></label>
+                        <input type="email" id="email" name="Email" class="form-control" 
+                               placeholder="correo@ejemplo.com" required>
+                        <div class="invalid-feedback">Ingrese un email válido.</div>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="notas" class="form-label">Información adicional o notas sobre el pedido</label>
+                    <textarea id="notas" name="Notas" class="form-control" rows="3" 
+                              placeholder="Instrucciones especiales de entrega, comentarios, etc. (Opcional)"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/carrito_detalle/pagina" class="btn btn-secondary">
+                        ← Volver al Carrito
+                    </a>
+                    <button type="submit" class="btn btn-success btn-finalizar">
+                        ✓ Finalizar Compra
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.facturacion-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.facturacion-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.facturacion-header h2 {
+    color: #2d3748;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.facturacion-subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+}
+
+.facturacion-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .facturacion-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Resumen del pedido */
+.resumen-pedido {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    color: white;
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+}
+
+.resumen-pedido h3 {
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    padding-bottom: 0.5rem;
+}
+
+.resumen-items {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.resumen-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.item-nombre {
+    flex: 1;
+    font-weight: 500;
+}
+
+.item-cantidad {
+    background: rgba(255,255,255,0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: 0 0.5rem;
+    font-size: 0.9rem;
+}
+
+.item-precio {
+    font-weight: bold;
+}
+
+.resumen-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding-top: 1rem;
+    border-top: 2px solid rgba(255,255,255,0.5);
+}
+
+.total-amount {
+    font-size: 1.4rem;
+}
+
+/* Formulario */
+.facturacion-form-container {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.facturacion-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 576px) {
+    .facturacion-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.required {
+    color: #e53e3e;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.form-control::placeholder {
+    color: #a0aec0;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+    padding: 0.875rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.btn-finalizar {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    flex: 1;
+    justify-content: center;
+}
+
+.btn-finalizar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+}
+
+/* Validación */
+.was-validated .form-control:invalid {
+    border-color: #e53e3e;
+}
+
+.was-validated .form-control:valid {
+    border-color: #48bb78;
+}
+
+.invalid-feedback {
+    color: #e53e3e;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formFacturacion');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+
+        const submitBtn = form.querySelector('.btn-finalizar');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Procesando...';
+
+        const formData = {
+            IdCarrito: document.getElementById('idCarrito').value,
+            Total: document.getElementById('totalPedido').value,
+            Nombre: document.getElementById('nombre').value,
+            Apellidos: document.getElementById('apellidos').value,
+            Telefono: document.getElementById('telefono').value,
+            Email: document.getElementById('email').value,
+            Notas: document.getElementById('notas').value || ''
+        };
+
+        try {
+            const response = await fetch('/facturacion/procesar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const resultado = await response.json();
+
+            if (response.ok && !resultado.error) {
+                // Mostrar mensaje de éxito y redirigir
+                alert('✅ ¡Compra realizada con éxito!\n\nNúmero de pedido: ' + resultado.IdPedido);
+                window.location.href = '/pedidos/pagina';
+            } else {
+                alert('❌ Error: ' + (resultado.error || 'No se pudo procesar la compra'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        } catch (error) {
+            console.error('Error al procesar:', error);
+            alert('❌ Error de conexión. Intente nuevamente.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+});
+</script>
+
+{% endblock %}
+
