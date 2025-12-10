@@ -1,5 +1,6 @@
 import datetime
 import decimal
+from typing import Optional
 from sqlalchemy import Integer, Unicode, DECIMAL, DateTime, ForeignKeyConstraint, Index, PrimaryKeyConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
@@ -19,6 +20,8 @@ class Pedidos(Base):
     FechaPedido: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False, server_default=text("(SYSUTCDATETIME())"))
     Total: Mapped[decimal.Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, server_default=text("((0))"))
     Estado: Mapped[str] = mapped_column(Unicode(20), nullable=False, server_default=text("(N'Pendiente')"))
+    Notas: Mapped[Optional[str]] = mapped_column(Unicode(500), nullable=True)
+    TiendaEnvio: Mapped[Optional[str]] = mapped_column(Unicode(200), nullable=True)
 
     Clientes_: Mapped["Clientes"] = relationship("Clientes", back_populates="Pedidos")
     PedidosDetalle: Mapped[list["PedidosDetalle"]] = relationship("PedidosDetalle", back_populates="Pedidos_", cascade="all, delete-orphan")

@@ -302,11 +302,16 @@ class PedidosService:
             if not producto.Activo:
                 return {"error": f"El producto {producto.Nombre} no está activo"}
             
-            # Verificar si ya existe el producto en el pedido
-            detalle_existente = db.session.query(PedidosDetalle).filter(
-                PedidosDetalle.IdPedido == id_pedido,
-                PedidosDetalle.IdProducto == id_producto
-            ).first()
+            # Intentar verificar si ya existe el producto en el pedido
+            try:
+                detalle_existente = db.session.query(PedidosDetalle).filter(
+                    PedidosDetalle.IdPedido == id_pedido,
+                    PedidosDetalle.IdProducto == id_producto
+                ).first()
+            except Exception as e:
+                # La tabla PedidosDetalle no existe
+                print(f"[PedidosService] La tabla PedidosDetalle no existe: {str(e)}")
+                return {"error": "La tabla de detalles de pedidos no existe en la base de datos. Por favor, cree la tabla PedidosDetalle."}
             
             if detalle_existente:
                 nueva_cantidad = detalle_existente.Cantidad + cantidad
@@ -437,7 +442,8 @@ class PedidosService:
             "IdCliente": p.IdCliente,
             "FechaPedido": str(p.FechaPedido),
             "Total": float(p.Total),
-            "Estado": p.Estado
+            "Estado": p.Estado,
+            "Notas": p.Notas or ""
         }
 
     @staticmethod
@@ -464,6 +470,18 @@ class PedidosService:
         except Exception:
             pass
         
+        # Obtener notas y tienda de envío si las columnas existen
+        notas = ""
+        tienda_envio = ""
+        try:
+            notas = p.Notas or "" if hasattr(p, 'Notas') else ""
+        except Exception:
+            notas = ""
+        try:
+            tienda_envio = p.TiendaEnvio or "" if hasattr(p, 'TiendaEnvio') else ""
+        except Exception:
+            tienda_envio = ""
+        
         return {
             "IdPedido": p.IdPedido,
             "IdCliente": p.IdCliente,
@@ -471,6 +489,8 @@ class PedidosService:
             "FechaPedido": str(p.FechaPedido),
             "Total": float(p.Total),
             "Estado": p.Estado,
+            "Notas": notas,
+            "TiendaEnvio": tienda_envio,
             "Detalles": detalles
         }
 

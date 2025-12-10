@@ -23,7 +23,7 @@
   // =========================
   async function cargarClientes() {
     const tbody = document.getElementById("clientes-tbody");
-    tbody.innerHTML = `<tr><td colspan="7" class="loading">Cargando clientes...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="loading">Cargando clientes...</td></tr>`;
   
     try {
       // Llama a tu API (ajusta la URL según tu backend)
@@ -33,7 +33,7 @@
       const clientes = await response.json();
   
       if (clientes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7">No hay clientes registrados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6">No hay clientes registrados.</td></tr>`;
         return;
       }
   
@@ -46,7 +46,6 @@
           <td>${cliente.Nombre}</td>
           <td>${cliente.Correo}</td>
           <td>${cliente.Telefono || ""}</td>
-          <td>${cliente.Direccion || ""}</td>
           <td>${cliente.FechaRegistro}</td>
           <td class="actions">
             <!-- Botón Editar -->
@@ -83,7 +82,7 @@
         tbody.appendChild(tr);
       });
     } catch (error) {
-      tbody.innerHTML = `<tr><td colspan="7" class="error">Error al cargar clientes</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="error">Error al cargar clientes</td></tr>`;
       console.error(error);
     }
   }
@@ -103,8 +102,7 @@
     const data = {
       Nombre: document.getElementById("nombre").value,
       Correo: document.getElementById("correo").value,
-      Telefono: document.getElementById("telefono").value,
-      Direccion: document.getElementById("direccion").value
+      Telefono: document.getElementById("telefono").value
     };
 
     try {
@@ -184,7 +182,7 @@
     document.getElementById("modalTitulo").textContent = "Nuevo Cliente";
     
     // Habilitar todos los inputs
-    document.querySelectorAll("#formCliente input, #formCliente textarea").forEach(el => el.disabled = false);
+    document.querySelectorAll("#formCliente input").forEach(el => el.disabled = false);
     
     // Remover clases de validación
     document.getElementById("formCliente").classList.remove("was-validated");
@@ -208,10 +206,9 @@
       document.getElementById("nombre").value = cliente.Nombre;
       document.getElementById("correo").value = cliente.Correo;
       document.getElementById("telefono").value = cliente.Telefono || "";
-      document.getElementById("direccion").value = cliente.Direccion || "";
 
       // Habilitar inputs
-      document.querySelectorAll("#formCliente input, #formCliente textarea").forEach(el => el.disabled = false);
+      document.querySelectorAll("#formCliente input").forEach(el => el.disabled = false);
       
       // Remover clases de validación
       document.getElementById("formCliente").classList.remove("was-validated");
@@ -237,10 +234,9 @@
       document.getElementById("nombre").value = cliente.Nombre;
       document.getElementById("correo").value = cliente.Correo;
       document.getElementById("telefono").value = cliente.Telefono || "";
-      document.getElementById("direccion").value = cliente.Direccion || "";
   
       // Deshabilitar inputs si es solo lectura
-      document.querySelectorAll("#formCliente input, #formCliente textarea").forEach(el => el.disabled = true);
+      document.querySelectorAll("#formCliente input").forEach(el => el.disabled = true);
     } catch (err) {
       console.error(err);
       alert("Error al cargar detalles del cliente.");

@@ -87,24 +87,41 @@ function renderizarPedidos() {
     const tbody = document.getElementById("pedidos-tbody");
     
     if (pedidos.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='7' class='loading'>No hay pedidos registrados</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='9' class='loading'>No hay pedidos registrados</td></tr>";
         return;
     }
     
     tbody.innerHTML = pedidos.map(pedido => {
         const fecha = new Date(pedido.FechaPedido).toLocaleDateString("es-ES");
         const total = pedido.Total.toFixed(2);
-        const itemsCount = pedido.Detalles ? pedido.Detalles.length : 0;
         const nombreCliente = pedido.NombreCliente || `Cliente #${pedido.IdCliente}`;
+        const tiendaEnvio = pedido.TiendaEnvio || "";
+        const notas = pedido.Notas || "";
+        const notasCortas = notas.length > 30 ? notas.substring(0, 30) + "..." : notas;
+        
+        // Calcular cantidad total de cartas
+        const cantidadCartas = pedido.Detalles && pedido.Detalles.length > 0 
+            ? pedido.Detalles.reduce((sum, d) => sum + (d.Cantidad || 0), 0)
+            : 0;
         
         return `
             <tr>
                 <td>${pedido.IdPedido}</td>
                 <td>${nombreCliente}</td>
                 <td>${fecha}</td>
+                <td style="text-align: center;">
+                    <span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 12px; font-weight: bold;">
+                        🃏 ${cantidadCartas}
+                    </span>
+                </td>
                 <td>$${total}</td>
                 <td><span class="estado-badge estado-${pedido.Estado.toLowerCase().replace(' ', '-')}">${pedido.Estado}</span></td>
-                <td>${itemsCount} items</td>
+                <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${tiendaEnvio}">
+                    ${tiendaEnvio ? `<span style="cursor: help;">🏪 ${tiendaEnvio}</span>` : '<span style="color: #999;">-</span>'}
+                </td>
+                <td title="${notas}" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${notas ? `<span style="cursor: help;">📝 ${notasCortas}</span>` : '<span style="color: #999;">-</span>'}
+                </td>
                 <td class="acciones">
                     <button class="btn-icon" onclick="verDetalles(${pedido.IdPedido})" title="Ver detalles">👁️</button>
                     ${pedido.Estado === "Pendiente" ? `
@@ -193,13 +210,44 @@ function agregarDetalle() {
 // Función para renderizar detalles
 function renderizarDetalles() {
     const container = document.getElementById("detalles-list");
+    
+    // Si no hay detalles, mostrar mensaje informativo
+    if (detallesPedido.length === 0) {
+        container.innerHTML = `
+            <div class="no-detalles-mensaje" style="
+                background: #fff3cd;
+                border: 1px solid #ffc107;
+                border-radius: 8px;
+                padding: 15px;
+                text-align: center;
+                color: #856404;
+                margin-bottom: 10px;
+            ">
+                <p style="margin: 0 0 10px 0;"><strong>📦 No hay productos en este pedido</strong></p>
+                <p style="margin: 0; font-size: 14px;">Haz clic en "+ Agregar Carta" para añadir productos al pedido.</p>
+            </div>
+        `;
+        calcularTotal();
+        return;
+    }
+    
     container.innerHTML = detallesPedido.map((detalle, index) => {
         const producto = productos.find(p => p.IdProducto == detalle.IdProducto);
         const stockDisponible = producto ? producto.Stock : 0;
+        const nombreProducto = detalle.NombreProducto || (producto ? producto.Nombre : 'Producto desconocido');
         
         return `
-            <div class="detalle-item" data-index="${index}">
-                <select class="producto-select" onchange="actualizarDetalleProducto(${index}, this.value)">
+            <div class="detalle-item" data-index="${index}" style="
+                display: grid;
+                grid-template-columns: 2fr 80px 100px 100px 40px;
+                gap: 10px;
+                align-items: center;
+                padding: 10px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                margin-bottom: 8px;
+            ">
+                <select class="producto-select" onchange="actualizarDetalleProducto(${index}, this.value)" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
                     <option value="">Seleccione una carta</option>
                     ${productos.map(p => {
                         const selected = p.IdProducto == detalle.IdProducto ? "selected" : "";
@@ -209,10 +257,11 @@ function renderizarDetalles() {
                 </select>
                 <input type="number" class="cantidad-input" min="1" value="${detalle.Cantidad}" 
                        onchange="actualizarDetalleCantidad(${index}, this.value)"
-                       max="${stockDisponible}">
-                <span class="precio-unitario">$${detalle.PrecioUnitario ? detalle.PrecioUnitario.toFixed(2) : "0.00"}</span>
-                <span class="subtotal">$${((detalle.Cantidad || 0) * (detalle.PrecioUnitario || 0)).toFixed(2)}</span>
-                <button type="button" class="btn-icon btn-danger" onclick="eliminarDetalle(${index})" title="Eliminar">🗑️</button>
+                       max="${stockDisponible}"
+                       style="padding: 8px; border-radius: 4px; border: 1px solid #ddd; text-align: center;">
+                <span class="precio-unitario" style="text-align: right; color: #666;">$${detalle.PrecioUnitario ? detalle.PrecioUnitario.toFixed(2) : "0.00"}</span>
+                <span class="subtotal" style="text-align: right; font-weight: bold; color: #28a745;">$${((detalle.Cantidad || 0) * (detalle.PrecioUnitario || 0)).toFixed(2)}</span>
+                <button type="button" class="btn-icon btn-danger" onclick="eliminarDetalle(${index})" title="Eliminar" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer;">🗑️</button>
             </div>
         `;
     }).join("");
@@ -407,21 +456,30 @@ async function actualizarPedidoCompleto(idPedido, formData) {
 document.getElementById("formPedido").addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    if (detallesPedido.length === 0) {
+    // Si estamos editando y no hay detalles, solo actualizar el estado
+    const soloActualizarEstado = pedidoEditandoId && detallesPedido.length === 0;
+    
+    if (!pedidoEditandoId && detallesPedido.length === 0) {
         mostrarError("El pedido debe tener al menos un detalle");
         return;
     }
     
-    // Validar stock antes de enviar
-    for (const detalle of detallesPedido) {
-        const producto = productos.find(p => p.IdProducto == detalle.IdProducto);
-        if (!producto) {
-            mostrarError(`Producto no encontrado: ${detalle.NombreProducto}`);
-            return;
-        }
-        if (producto.Stock < detalle.Cantidad) {
-            mostrarError(`Stock insuficiente para ${producto.Nombre}. Disponible: ${producto.Stock}, solicitado: ${detalle.Cantidad}`);
-            return;
+    // Validar stock antes de enviar (solo si hay detalles)
+    if (detallesPedido.length > 0) {
+        for (const detalle of detallesPedido) {
+            if (!detalle.IdProducto) {
+                mostrarError("Debe seleccionar un producto para cada detalle");
+                return;
+            }
+            const producto = productos.find(p => p.IdProducto == detalle.IdProducto);
+            if (!producto) {
+                mostrarError(`Producto no encontrado: ${detalle.NombreProducto || detalle.IdProducto}`);
+                return;
+            }
+            if (producto.Stock < detalle.Cantidad) {
+                mostrarError(`Stock insuficiente para ${producto.Nombre}. Disponible: ${producto.Stock}, solicitado: ${detalle.Cantidad}`);
+                return;
+            }
         }
     }
     
@@ -429,7 +487,7 @@ document.getElementById("formPedido").addEventListener("submit", async (e) => {
         IdCliente: parseInt(document.getElementById("idCliente").value),
         Estado: document.getElementById("estado").value,
         detalles: detallesPedido.map(d => ({
-            IdDetalle: d.IdDetalle || null, // Preservar IdDetalle si existe
+            IdDetalle: d.IdDetalle || null,
             IdProducto: parseInt(d.IdProducto),
             Cantidad: parseInt(d.Cantidad),
             PrecioUnitario: parseFloat(d.PrecioUnitario)
@@ -439,8 +497,18 @@ document.getElementById("formPedido").addEventListener("submit", async (e) => {
     try {
         let resultado;
         if (pedidoEditandoId) {
-            // Actualizar pedido existente
-            resultado = await actualizarPedidoCompleto(pedidoEditandoId, formData);
+            if (soloActualizarEstado) {
+                // Solo actualizar el estado del pedido, sin tocar detalles
+                const response = await fetch(`/pedidos/${pedidoEditandoId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ Estado: formData.Estado })
+                });
+                resultado = await response.json();
+            } else {
+                // Actualizar pedido existente con detalles
+                resultado = await actualizarPedidoCompleto(pedidoEditandoId, formData);
+            }
         } else {
             // Crear nuevo pedido
             const response = await fetch("/pedidos", {
@@ -452,7 +520,14 @@ document.getElementById("formPedido").addEventListener("submit", async (e) => {
         }
         
         if (resultado.error) {
-            mostrarError(resultado.error);
+            // Mostrar mensaje más amigable si es error de tabla
+            if (resultado.error.includes("tabla") || resultado.error.includes("PedidosDetalle")) {
+                mostrarError("No se pueden guardar los detalles porque la tabla PedidosDetalle no existe en la base de datos. El estado del pedido se actualizó correctamente.");
+                cerrarModal();
+                cargarPedidos();
+            } else {
+                mostrarError(resultado.error);
+            }
         } else {
             cerrarModal();
             cargarPedidos();
@@ -479,33 +554,60 @@ async function verDetalles(idPedido) {
         const contenido = document.getElementById("detalles-contenido");
         
         const nombreClienteDetalle = pedido.NombreCliente || `Cliente #${pedido.IdCliente}`;
+        const tieneDetalles = pedido.Detalles && pedido.Detalles.length > 0;
+        const tiendaEnvioPedido = pedido.TiendaEnvio || "";
+        const notasPedido = pedido.Notas || "";
+        
         contenido.innerHTML = `
-            <div class="detalles-info">
-                <p><strong>Cliente:</strong> ${nombreClienteDetalle}</p>
-                <p><strong>Fecha:</strong> ${new Date(pedido.FechaPedido).toLocaleString("es-ES")}</p>
-                <p><strong>Estado:</strong> ${pedido.Estado}</p>
-                <p><strong>Total:</strong> $${pedido.Total.toFixed(2)}</p>
+            <div class="detalles-info" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <p style="margin: 5px 0;"><strong>👤 Cliente:</strong> ${nombreClienteDetalle}</p>
+                <p style="margin: 5px 0;"><strong>📅 Fecha:</strong> ${new Date(pedido.FechaPedido).toLocaleString("es-ES")}</p>
+                <p style="margin: 5px 0;"><strong>📊 Estado:</strong> <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">${pedido.Estado}</span></p>
+                <p style="margin: 5px 0; font-size: 1.2em;"><strong>💰 Total:</strong> $${pedido.Total.toFixed(2)}</p>
             </div>
-            <table class="detalles-table">
-                <thead>
-                    <tr>
-                        <th>Carta</th>
-                        <th>Cantidad</th>
-                        <th>Precio Unitario</th>
-                        <th>Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${(pedido.Detalles || []).map(d => `
-                        <tr>
-                            <td>${d.NombreProducto}</td>
-                            <td>${d.Cantidad}</td>
-                            <td>$${d.PrecioUnitario.toFixed(2)}</td>
-                            <td>$${d.Subtotal.toFixed(2)}</td>
+            ${tiendaEnvioPedido ? `
+                <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <p style="margin: 0 0 5px 0; font-weight: bold; color: #2e7d32;">🏪 Tienda de Envío:</p>
+                    <p style="margin: 0; color: #2e7d32;">${tiendaEnvioPedido}</p>
+                </div>
+            ` : ''}
+            ${notasPedido ? `
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <p style="margin: 0 0 5px 0; font-weight: bold; color: #856404;">📝 Notas del Cliente:</p>
+                    <p style="margin: 0; color: #856404;">${notasPedido}</p>
+                </div>
+            ` : ''}
+            ${tieneDetalles ? `
+                <h4 style="margin: 15px 0 10px 0; color: #333;">🛒 Productos del Pedido:</h4>
+                <table class="detalles-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Carta</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Cantidad</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Precio Unit.</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Subtotal</th>
                         </tr>
-                    `).join("")}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        ${pedido.Detalles.map(d => `
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #eee;">${d.NombreProducto || 'Producto'}</td>
+                                <td style="padding: 10px; text-align: center; border-bottom: 1px solid #eee;">${d.Cantidad}</td>
+                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">$${(d.PrecioUnitario || 0).toFixed(2)}</td>
+                                <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee; font-weight: bold; color: #28a745;">$${(d.Subtotal || 0).toFixed(2)}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            ` : `
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; text-align: center; color: #856404;">
+                    <p style="margin: 0 0 10px 0; font-size: 1.1em;"><strong>ℹ️ Sin detalles de productos</strong></p>
+                    <p style="margin: 0; font-size: 14px;">
+                        Este pedido no tiene detalles de productos registrados.<br>
+                        La tabla PedidosDetalle puede no existir en la base de datos.
+                    </p>
+                </div>
+            `}
         `;
         
         document.getElementById("modalDetalles").style.display = "block";

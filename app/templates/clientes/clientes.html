@@ -20,14 +20,13 @@
           <th>Nombre</th>
           <th>Correo</th>
           <th>Teléfono</th>
-          <th>Dirección</th>
           <th>Fecha Registro</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody id="clientes-tbody">
         <tr>
-          <td colspan="7" class="text-center">Cargando clientes...</td>
+          <td colspan="6" class="text-center">Cargando clientes...</td>
         </tr>
       </tbody>
     </table>
@@ -64,12 +63,6 @@
             <label for="telefono" class="form-label">Teléfono</label>
             <input type="text" class="form-control" id="telefono" name="Telefono" pattern="^[0-9]{8,15}$">
             <div class="invalid-feedback">El teléfono debe tener entre 8 y 15 dígitos.</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="direccion" class="form-label">Dirección</label>
-            <textarea class="form-control" id="direccion" name="Direccion" rows="3" maxlength="200"></textarea>
-            <div class="invalid-feedback">La dirección no puede superar 200 caracteres.</div>
           </div>
 
           <div class="modal-footer">
