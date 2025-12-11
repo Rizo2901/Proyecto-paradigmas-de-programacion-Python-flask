@@ -18,6 +18,7 @@ class Productos(Base):
     Precio: Mapped[decimal.Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, server_default=text("((0))"))
     Stock: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("((0))"))
     Activo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("((1))"))
+    Imagen: Mapped[Optional[str]] = mapped_column(Unicode(255), nullable=True)
 
     # Relaciones uno-a-muchos con cascada y passive_deletes
     CarritoDetalle: Mapped[list["CarritoDetalle"]] = relationship(
