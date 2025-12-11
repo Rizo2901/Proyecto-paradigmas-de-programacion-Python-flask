@@ -16,6 +16,7 @@
     <table class="clientes-table">
       <thead class="table-dark">
         <tr>
+          <th>Imagen</th>
           <th>Nombre</th>
           <th>Descripción</th>
           <th>Precio</th>
@@ -82,6 +83,15 @@
               <option value="false">No</option>
             </select>
             <div class="invalid-feedback">Seleccione un estado.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Imagen de la Carta</label>
+            <input type="file" class="form-control" id="imagen" accept="image/*">
+            <div class="mt-2">
+              <img id="imagen-preview" src="" alt="Vista previa" style="max-width: 200px; max-height: 200px; display: none; border-radius: 8px; border: 2px solid rgba(196, 181, 253, 0.3);">
+            </div>
+            <small class="text-muted">Formatos: JPG, PNG, GIF, WebP</small>
           </div>
 
           <div class="modal-footer">

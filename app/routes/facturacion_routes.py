@@ -92,6 +92,7 @@ def procesar_facturacion():
         
         email = data.get("Email", "").strip()
         telefono = data.get("Telefono", "").strip()
+        tienda_envio = data.get("TiendaEnvio", "").strip()
         notas = data.get("Notas", "").strip()
         
         # PASO 1: Obtener o crear cliente y hacer COMMIT
@@ -133,10 +134,20 @@ def procesar_facturacion():
                 db.session.commit()  # Guardar cliente inmediatamente
         
         # PASO 2: Crear el pedido (el cliente ya existe en la BD)
-        pedido = Pedidos(
-            IdCliente=cliente.IdCliente,
-            Total=Decimal(str(total))
-        )
+        # Intentar crear con todos los campos opcionales
+        try:
+            pedido = Pedidos(
+                IdCliente=cliente.IdCliente,
+                Total=Decimal(str(total)),
+                Notas=notas if notas else None,
+                TiendaEnvio=tienda_envio if tienda_envio else None
+            )
+        except Exception:
+            # Si falla por columnas que no existen, crear sin ellas
+            pedido = Pedidos(
+                IdCliente=cliente.IdCliente,
+                Total=Decimal(str(total))
+            )
         db.session.add(pedido)
         db.session.commit()  # Guardar pedido
         

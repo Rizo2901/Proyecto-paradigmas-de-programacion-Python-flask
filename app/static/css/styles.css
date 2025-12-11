@@ -101,6 +101,18 @@ body {
     color: #dcd6ff;
 }
 
+.header-logo {
+    height: 80px;
+    width: auto;
+    margin-left: 10px;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+.header-logo:hover {
+    transform: scale(1.05);
+}
+
 /* Carrito Icon */
 .cart-icon-container {
     position: relative;

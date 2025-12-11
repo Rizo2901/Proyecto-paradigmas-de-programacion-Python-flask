@@ -3,7 +3,7 @@
 // =========================
 async function cargarCartas() {
     const tbody = document.getElementById("cartas-tbody");
-    tbody.innerHTML = `<tr><td colspan="6">Cargando cartas...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7">Cargando cartas...</td></tr>`;
 
     try {
         const res = await fetch("/productos");
@@ -12,7 +12,7 @@ async function cargarCartas() {
         const cartas = await res.json();
 
         if (cartas.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6">No hay cartas registradas.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7">No hay cartas registradas.</td></tr>`;
             return;
         }
 
@@ -20,11 +20,15 @@ async function cargarCartas() {
 
         cartas.forEach(carta => {
             const tr = document.createElement("tr");
+            const imagenHtml = carta.Imagen 
+                ? `<img src="/static/img/cartas/${carta.Imagen}" alt="${carta.Nombre}" style="width: 50px; height: 70px; object-fit: cover; border-radius: 4px;">`
+                : `<span style="color: #666;">Sin imagen</span>`;
 
             tr.innerHTML = `
+                <td>${imagenHtml}</td>
                 <td>${carta.Nombre}</td>
-                <td>${carta.Descripcion}</td>
-                <td>${carta.Precio}</td>
+                <td>${carta.Descripcion || ''}</td>
+                <td>₡${carta.Precio}</td>
                 <td>${carta.Stock}</td>
                 <td>${carta.Activo ? "Sí" : "No"}</td>
                 <td>
@@ -53,9 +57,37 @@ async function cargarCartas() {
 
     } catch (err) {
         console.error(err);
-        tbody.innerHTML = `<tr><td colspan="6">Error al cargar cartas</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7">Error al cargar cartas</td></tr>`;
     }
 }
+
+// =========================
+// VISTA PREVIA DE IMAGEN
+// =========================
+document.addEventListener("DOMContentLoaded", function() {
+    const imagenInput = document.getElementById("imagen");
+    const imagenPreview = document.getElementById("imagen-preview");
+    
+    if (imagenInput) {
+        imagenInput.addEventListener("change", function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagenPreview.src = e.target.result;
+                    imagenPreview.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagenPreview.src = "";
+                imagenPreview.style.display = "none";
+            }
+        });
+    }
+});
+
+// Variable para guardar la imagen actual
+let imagenActual = null;
 
 // =========================
 // NUEVA CARTA
@@ -64,6 +96,12 @@ function nuevaCarta() {
     document.getElementById("modalTitulo").textContent = "Nueva Carta";
     document.getElementById("formCarta").reset();
     document.getElementById("IdProducto").value = "";
+    imagenActual = null;
+    
+    // Limpiar vista previa
+    const imagenPreview = document.getElementById("imagen-preview");
+    imagenPreview.src = "";
+    imagenPreview.style.display = "none";
 
     document.querySelectorAll("#formCarta input, #formCarta textarea, #formCarta select")
         .forEach(el => el.disabled = false);
@@ -81,10 +119,25 @@ async function editarCarta(id) {
 
     document.getElementById("IdProducto").value = carta.IdProducto;
     document.getElementById("nombre").value = carta.Nombre;
-    document.getElementById("descripcion").value = carta.Descripcion;
+    document.getElementById("descripcion").value = carta.Descripcion || '';
     document.getElementById("precio").value = carta.Precio;
     document.getElementById("stock").value = carta.Stock;
     document.getElementById("activo").value = carta.Activo ? "true" : "false";
+    
+    // Mostrar imagen actual si existe
+    const imagenPreview = document.getElementById("imagen-preview");
+    if (carta.Imagen) {
+        imagenPreview.src = `/static/img/cartas/${carta.Imagen}`;
+        imagenPreview.style.display = "block";
+        imagenActual = carta.Imagen;
+    } else {
+        imagenPreview.src = "";
+        imagenPreview.style.display = "none";
+        imagenActual = null;
+    }
+    
+    // Limpiar input de imagen
+    document.getElementById("imagen").value = "";
 
     document.querySelectorAll("#formCarta input, #formCarta textarea, #formCarta select")
         .forEach(el => el.disabled = false);
@@ -102,10 +155,20 @@ async function verCarta(id) {
 
     document.getElementById("IdProducto").value = carta.IdProducto;
     document.getElementById("nombre").value = carta.Nombre;
-    document.getElementById("descripcion").value = carta.Descripcion;
+    document.getElementById("descripcion").value = carta.Descripcion || '';
     document.getElementById("precio").value = carta.Precio;
     document.getElementById("stock").value = carta.Stock;
     document.getElementById("activo").value = carta.Activo ? "true" : "false";
+    
+    // Mostrar imagen si existe
+    const imagenPreview = document.getElementById("imagen-preview");
+    if (carta.Imagen) {
+        imagenPreview.src = `/static/img/cartas/${carta.Imagen}`;
+        imagenPreview.style.display = "block";
+    } else {
+        imagenPreview.src = "";
+        imagenPreview.style.display = "none";
+    }
 
     document.querySelectorAll("#formCarta input, #formCarta textarea, #formCarta select")
         .forEach(el => el.disabled = true);
@@ -145,30 +208,41 @@ document.getElementById("formCarta").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const id = document.getElementById("IdProducto").value;
-    const data = {
-        Nombre: document.getElementById("nombre").value,
-        Descripcion: document.getElementById("descripcion").value,
-        Precio: document.getElementById("precio").value,
-        Stock: document.getElementById("stock").value,
-        Activo: document.getElementById("activo").value === "true"
-    };
+    const imagenFile = document.getElementById("imagen").files[0];
+    
+    // Usar FormData para enviar datos incluyendo la imagen
+    const formData = new FormData();
+    formData.append("Nombre", document.getElementById("nombre").value);
+    formData.append("Descripcion", document.getElementById("descripcion").value);
+    formData.append("Precio", document.getElementById("precio").value);
+    formData.append("Stock", document.getElementById("stock").value);
+    formData.append("Activo", document.getElementById("activo").value);
+    
+    if (imagenFile) {
+        formData.append("imagen", imagenFile);
+    }
 
     const url = id ? `/productos/${id}` : "/productos";
     const method = id ? "PUT" : "POST";
 
-    const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    });
+    try {
+        const res = await fetch(url, {
+            method,
+            body: formData
+        });
 
-    if (!res.ok) {
+        if (!res.ok) {
+            const error = await res.json();
+            alert(error.error || "Error al guardar carta");
+            return;
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById("modalCarta")).hide();
+        cargarCartas();
+    } catch (err) {
+        console.error(err);
         alert("Error al guardar carta");
-        return;
     }
-
-    bootstrap.Modal.getInstance(document.getElementById("modalCarta")).hide();
-    cargarCartas();
 });
 
 // =========================

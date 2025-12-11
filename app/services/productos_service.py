@@ -33,7 +33,8 @@ class ProductosService:
                 Descripcion=data.get("Descripcion"),
                 Precio=data.get("Precio", 0),
                 Stock=data.get("Stock", 0),
-                Activo=data.get("Activo", True)
+                Activo=data.get("Activo", True),
+                Imagen=data.get("Imagen")
             )
             db.session.add(producto)
             db.session.commit()
@@ -50,16 +51,18 @@ class ProductosService:
             if not producto:
                 return {"error": "Producto no encontrado"}
 
-            if "Nombre" in data:
+            if "Nombre" in data and data["Nombre"]:
                 producto.Nombre = data["Nombre"]
             if "Descripcion" in data:
                 producto.Descripcion = data.get("Descripcion")
-            if "Precio" in data:
+            if "Precio" in data and data["Precio"]:
                 producto.Precio = data["Precio"]
-            if "Stock" in data:
+            if "Stock" in data and data["Stock"]:
                 producto.Stock = data["Stock"]
             if "Activo" in data:
                 producto.Activo = data["Activo"]
+            if "Imagen" in data and data["Imagen"]:
+                producto.Imagen = data["Imagen"]
 
             db.session.commit()
             return ProductosService.to_dict(producto)
@@ -154,5 +157,6 @@ class ProductosService:
             "Descripcion": p.Descripcion,
             "Precio": float(p.Precio),
             "Stock": p.Stock,
-            "Activo": p.Activo
+            "Activo": p.Activo,
+            "Imagen": p.Imagen
         }
