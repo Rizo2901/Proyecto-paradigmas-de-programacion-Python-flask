@@ -44,8 +44,9 @@ async function cargarCartas() {
                         Ver
                     </button>
 
-                    <button class="btn btn-danger btn-sm"
-                        onclick="setCartaEliminar(${carta.IdProducto}, '${carta.Nombre}')"
+                    <button class="btn btn-danger btn-sm btn-eliminar-carta"
+                        data-id="${carta.IdProducto}"
+                        data-nombre="${String(carta.Nombre).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
                         data-bs-toggle="modal" data-bs-target="#modalEliminar">
                         Eliminar
                     </button>
@@ -180,24 +181,53 @@ async function verCarta(id) {
 // =========================
 let cartaEliminarId = null;
 
+// Event listener para los botones de eliminar (delegación de eventos)
+document.addEventListener('click', function(e) {
+    const button = e.target.closest('.btn-eliminar-carta');
+    if (button) {
+        const id = button.getAttribute('data-id');
+        const nombre = button.getAttribute('data-nombre');
+        if (id && nombre) {
+            setCartaEliminar(id, nombre);
+        }
+    }
+});
+
 function setCartaEliminar(id, nombre) {
-    cartaEliminarId = id;
+    cartaEliminarId = parseInt(id); // Asegurar que sea un número
+    if (isNaN(cartaEliminarId)) {
+        console.error("Error: ID de carta inválido:", id);
+        alert("Error: ID de carta inválido");
+        return;
+    }
+    // El navegador decodifica automáticamente los atributos HTML
     document.getElementById("nombreCartaEliminar").textContent = nombre;
+    console.log("Carta seleccionada para eliminar - ID:", cartaEliminarId, "Nombre:", nombre);
 }
 
 async function confirmarEliminar() {
-    
+    if (!cartaEliminarId) {
+        alert("Error: No se ha seleccionado una carta para eliminar.");
+        return;
+    }
 
     try {
         const response = await fetch(`/productos/${cartaEliminarId}`, { method: "DELETE" });
-        if (!response.ok) throw new Error("Error al eliminar la carta");
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || "Error al eliminar la carta");
+        }
     
+        const result = await response.json();
         bootstrap.Modal.getInstance(document.getElementById("modalEliminar")).hide();
+        cartaEliminarId = null; // Limpiar el ID después de eliminar
         cargarCartas();
-      } catch (err) {
-        console.error(err);
-        alert("Hubo un error al eliminar la carta.");
-      }
+        alert("Carta eliminada correctamente.");
+    } catch (err) {
+        console.error("Error al eliminar carta:", err);
+        alert(err.message || "Hubo un error al eliminar la carta.");
+    }
 }
 
 
